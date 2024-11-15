@@ -66,7 +66,9 @@ const FlipbookPage: React.FC = () => {
             <div className="loader-modal">
               <div className="loader-content">
                 <div className="spinner"></div>
-                <p>Loading, please wait...</p>
+                <p>
+                  Loading, please wait... (max. 5 mins based on the file size)
+                </p>
               </div>
             </div>
           )}
