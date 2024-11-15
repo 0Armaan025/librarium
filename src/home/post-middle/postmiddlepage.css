@@ -1,0 +1,31 @@
+.postMiddlePart {
+  background: #242424;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  margin: 18px 2rem 1rem 2rem;
+  border-radius: 1rem;
+}
+
+.postMiddleHeadline {
+  font-size: 3.5rem;
+  color: white;
+  font-weight: 500;
+  font-family: "Supermercado One", sans-serif;
+}
+
+.postMiddleSubHeadline {
+  font-size: 1.2rem;
+  color: #e4e4e4;
+  font-weight: 300;
+  font-family: "Raleway", sans-serif;
+}
+
+.bookShowOff {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}

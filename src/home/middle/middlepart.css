@@ -15,7 +15,7 @@
   padding-bottom: 2rem;
   border-radius: 1rem;
   padding-right: 0.2rem;
-  height: 80vh;
+  height: 75vh;
   background: #242424;
   align-items: start;
   margin-left: 2rem;
@@ -25,7 +25,7 @@
   display: flex;
   background: #ffe4c9;
   margin-left: 1rem;
-  height: 80vh;
+  height: 75vh;
   padding-right: 2rem;
   padding-top: 2rem;
   padding-bottom: 2rem;
@@ -106,4 +106,10 @@
 
 .arrowBtn:hover {
   box-shadow: black 5px 4px 4px 4px;
+}
+
+.randomThought {
+  color: white;
+  font-size: 20px;
+  font-family: "Quicksand", sans-serif;
 }
