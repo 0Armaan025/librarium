@@ -1,0 +1,119 @@
+.flipbook {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  width: 40%; /* Adjust as needed */
+  height: 100vh;
+  margin: 50px auto;
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  perspective: 1500px; /* Added for 3D effect */
+}
+
+.flipbook-page {
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  /* background-position: ; */
+  background-position: center;
+  transition: transform 0.6s ease-in-out, box-shadow 0.6s ease-in-out;
+  border-radius: 8px;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1);
+  transform-origin: left; /* Makes the flip originate from the left */
+}
+
+.flipbook-page.flipping {
+  transform: rotateY(-180deg) scale(0.95); /* Rotate with slight scaling for 3D effect */
+  box-shadow: 5px 10px 20px rgba(0, 0, 0, 0.3); /* Shadow to add depth */
+}
+
+.flipbook-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.05); /* Light overlay to simulate back page */
+  border-radius: 8px;
+  transform: rotateY(180deg); /* Mirrors the back side */
+}
+
+.prev-btn,
+.next-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 15px 25px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 5px;
+}
+
+.prev-btn {
+  left: 10px;
+}
+
+.next-btn {
+  right: 10px;
+}
+
+.page-navigation {
+  margin-top: 15px;
+  font-size: 18px;
+}
+
+.page-input {
+  width: 40px;
+  text-align: center;
+  font-size: 16px;
+  margin: 0 5px;
+}
+
+/* Modal overlay */
+.loader-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000; /* Ensure it overlays everything */
+}
+
+/* Loader content */
+.loader-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Spinner animation */
+.spinner {
+  border: 5px solid rgba(0, 0, 0, 0.1);
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 15px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
