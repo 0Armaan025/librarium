@@ -8,7 +8,7 @@ const Navbar = () => {
         <div className="text-lg font-bold">
           <img
             src="https://i.ibb.co/qFngHqh/Screenshot-2024-11-15-104300-removebg-preview-1.png"
-            className="w-40 h-14"
+            className="w-40 cursor-pointer h-14"
             // className="bg-blend-difference blend"
           />
         </div>
