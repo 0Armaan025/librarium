@@ -1,12 +1,61 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./bookinfopage.css";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
+import { useRouter, useParams } from "next/navigation";
 
-type Props = {};
+const BookInfoPage = () => {
+  const [bookDetails, setBookDetails] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
+  const { id } = useParams(); // 'id' will be the ISBN
 
-const BookInfoPage = (props: Props) => {
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchBookDetails = async (isbn: string) => {
+      try {
+        const response = await fetch(
+          `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+        );
+        const data = await response.json();
+
+        if (data.items && data.items.length > 0) {
+          const book = data.items[0].volumeInfo;
+          setBookDetails({
+            imageUrl: book.imageLinks?.thumbnail || "",
+            title: book.title || "N/A",
+            author: book.authors?.join(", ") || "Unknown Author",
+            isbn: isbn,
+            genre: book.categories?.join(", ") || "Unknown Genre",
+            published: book.publishedDate || "N/A",
+            publisher: book.publisher || "Unknown Publisher",
+            language: book.language || "N/A",
+            description: book.description || "No description available",
+          });
+        } else {
+          setBookDetails(null); // Handle case if no data is found
+        }
+      } catch (error) {
+        console.error("Error fetching book details:", error);
+        setBookDetails(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookDetails(id as string);
+  }, [id]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!bookDetails) {
+    return <div>Book not found</div>;
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -14,7 +63,7 @@ const BookInfoPage = (props: Props) => {
         <div className="flex flex-col sm:flex-row justify-center items-center sm:justify-between gap-8">
           <div className="w-full sm:w-1/3 flex justify-center">
             <img
-              src="https://media.newyorker.com/photos/672d6250f393a9ac8b8d73c3/master/w_1000,c_limit/r45260.jpg"
+              src={bookDetails.imageUrl}
               alt="Book Cover"
               className="w-full h-[30rem] rounded-lg shadow-lg"
             />
@@ -24,49 +73,49 @@ const BookInfoPage = (props: Props) => {
               className="text-4xl font-semibold text-gray-900"
               style={{ fontFamily: "Poppins" }}
             >
-              Book Title
+              {bookDetails.title}
             </h2>
             <h3
               className="text-xl text-gray-600"
               style={{ fontFamily: "Poppins" }}
             >
-              Author: <span className="font-semibold">John Doe</span>
+              Author:{" "}
+              <span className="font-semibold">{bookDetails.author}</span>
             </h3>
             <div className="flex flex-col sm:flex-row gap-2 text-gray-600">
               <h4 className="text-lg" style={{ fontFamily: "Poppins" }}>
-                ISBN: <span className="font-semibold">341242342</span>
-              </h4>
-              <h4 className="text-lg" style={{ fontFamily: "Poppins" }}>
-                ID: <span className="font-semibold">343243132</span>
+                ISBN: <span className="font-semibold">{bookDetails.isbn}</span>
               </h4>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 text-gray-600">
               <h5 className="text-lg" style={{ fontFamily: "Poppins" }}>
-                Genre: <span className="font-semibold">Fiction</span>
+                Genre:{" "}
+                <span className="font-semibold">{bookDetails.genre}</span>
               </h5>
               <h5 className="text-lg" style={{ fontFamily: "Poppins" }}>
-                Published: <span className="font-semibold">2021</span>
+                Published:{" "}
+                <span className="font-semibold">{bookDetails.published} </span>
               </h5>
             </div>
             <h5
               className="text-lg text-gray-600"
               style={{ fontFamily: "Poppins" }}
             >
-              Publisher: <span className="font-semibold">Someone</span>
+              Publisher:{" "}
+              <span className="font-semibold">{bookDetails.publisher}</span>
             </h5>
             <h5
               className="text-lg text-gray-600"
               style={{ fontFamily: "Poppins" }}
             >
-              Language: <span className="font-semibold">English</span>
+              Language:{" "}
+              <span className="font-semibold">{bookDetails.language}</span>
             </h5>
             <p
               className="text-md text-gray-700 mt-4"
               style={{ fontFamily: "Raleway, sans-serif" }}
             >
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
-              nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi.
-              Nulla quis sem at nib. Curabitur blandit tempus porttitor.
+              {bookDetails.description}
             </p>
             <br />
             <div className="mt-24 flex flex-row justify-center items-center">
@@ -77,7 +126,7 @@ const BookInfoPage = (props: Props) => {
                 Read this book
               </button>
               <button
-                className="p-4 border-[1.5px] border-gray-800 ml-4  text-black hover:bg-white transition-all rounded-lg font-semibold text-sm w-72"
+                className="p-4 border-[1.5px] border-gray-800 ml-4 text-black hover:bg-white transition-all rounded-lg font-semibold text-sm w-72"
                 style={{ fontFamily: "Poppins, sans-serif" }}
               >
                 Read it later

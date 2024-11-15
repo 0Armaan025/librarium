@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./bookspage.css";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
@@ -9,10 +9,88 @@ type Props = {};
 
 const BooksPage = (props: Props) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [books, setBooks] = useState([]);
+  const [genre, setGenre] = useState("fiction");
+  const [startIndex, setStartIndex] = useState(0); // Track the current index for pagination
+  const observerRef = useRef<HTMLDivElement | null>(null);
+
+  const fetchBooks = async (
+    query: string,
+    selectedGenre: string,
+    index: number
+  ) => {
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+          query + " " + selectedGenre
+        )}&maxResults=40&startIndex=${index}`
+      );
+      const data = await response.json();
+      const formattedBooks = data.items?.map((item: any) => ({
+        imageUrl:
+          item.volumeInfo.imageLinks?.thumbnail.replace(
+            "http://",
+            "https://"
+          ) ||
+          "https://imgs.search.brave.com/OC6avjR_4xFvRmk_78v6CvsGCq7Z1dTCyPMjSKTGefo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnNz/dGF0aWMubmV0L3k5/RHBULmpwZw", // Ensure HTTPS for better quality
+        title: item.volumeInfo.title || "N/A",
+        author: item.volumeInfo.authors?.join(", ") || "Unknown Author",
+        isbn:
+          item.volumeInfo.industryIdentifiers?.find(
+            (id: any) => id.type === "ISBN_13"
+          )?.identifier || "N/A",
+        genre: item.volumeInfo.categories?.join(", ") || "Unknown Genre",
+        published: item.volumeInfo.publishedDate || "N/A",
+        publisher: item.volumeInfo.publisher || "Unknown Publisher",
+        language: item.volumeInfo.language || "N/A",
+        description: item.volumeInfo.description || "No description available",
+      }));
+      setBooks((prevBooks) => [...prevBooks, ...(formattedBooks || [])] as any);
+    } catch (error) {
+      console.error("Error fetching books:", error);
+    }
+  };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
+
+  const handleSearch = () => {
+    setBooks([]); // Clear existing books for a fresh search
+    setStartIndex(0); // Reset pagination
+    fetchBooks(searchTerm || "books", genre, 0);
+  };
+
+  const handleGenreChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setGenre(event.target.value);
+    setBooks([]); // Reset books for new genre
+    setStartIndex(0); // Reset pagination
+    fetchBooks(searchTerm || "books", event.target.value, 0);
+  };
+
+  useEffect(() => {
+    // Fetch initial books on page load
+    fetchBooks("books", genre, startIndex);
+  }, []);
+
+  useEffect(() => {
+    // Infinite scroll functionality
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setStartIndex((prevIndex) => prevIndex + 40); // Increment index for next batch
+          fetchBooks(searchTerm || "books", genre, startIndex + 40);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerRef.current) observer.observe(observerRef.current);
+
+    return () => {
+      if (observerRef.current) observer.unobserve(observerRef.current);
+    };
+  }, [startIndex, genre, searchTerm]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -34,21 +112,47 @@ const BooksPage = (props: Props) => {
               onChange={handleSearchChange}
               style={{ fontFamily: "Poppins, sans-serif" }}
             />
+            <select
+              className="px-4 py-2 bg-[#e4c8ab] text-black rounded-md ml-4 focus:outline-none"
+              value={genre}
+              onChange={handleGenreChange}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              <option value="fiction">Fiction</option>
+              <option value="non-fiction">Non-Fiction</option>
+              <option value="fantasy">Fantasy</option>
+              <option value="romance">Romance</option>
+              <option value="thriller">Thriller</option>
+              <option value="science">Science</option>
+            </select>
             <button
               className="px-4 py-2 bg-[#333333] border-[1.2px] border-black text-white rounded-r-md hover:bg-[#555555] transition-all"
-              onClick={() => console.log("Search initiated")}
+              onClick={handleSearch}
               style={{ fontFamily: "Poppins, sans-serif" }}
             >
               Search
             </button>
           </div>
           <div className="mt-6 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mx-4">
-            <BookCard
-              authorName="John Doe"
-              bookName="John Doe"
-              imageUrl="https://m.media-amazon.com/images/I/81nFDRsd7jL._SY522_.jpg"
-            />
-          </div>{" "}
+            {books.length > 0 ? (
+              books.map((book: any, index) => (
+                <BookCard
+                  key={index}
+                  imageUrl={book.imageUrl}
+                  bookName={book.title}
+                  authorName={book.author}
+                  onClick={() => {
+                    window.location.href = "/book/" + book.isbn;
+                  }}
+                />
+              ))
+            ) : (
+              <p className="text-white text-center">
+                No books found. Try searching!
+              </p>
+            )}
+          </div>
+          <div ref={observerRef} className="h-10"></div>
         </div>
       </div>
       <Footer />
