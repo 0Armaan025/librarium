@@ -6,7 +6,8 @@ import { useRouter, useParams } from "next/navigation";
 
 const BookInfoPage = () => {
   const [bookDetails, setBookDetails] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingGoogleBook, setLoadingGoogleBook] = useState<boolean>(true);
+  const [loadingCustomAPI, setLoadingCustomAPI] = useState<boolean>(true);
   const [message, setMessage] = useState<string>("");
   const router = useRouter();
   const { id } = useParams(); // 'id' is the ISBN
@@ -15,6 +16,7 @@ const BookInfoPage = () => {
     if (!id) return;
 
     const fetchGoogleBookDetails = async (isbn: string) => {
+      setLoadingGoogleBook(true);
       try {
         const response = await fetch(
           `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
@@ -34,9 +36,6 @@ const BookInfoPage = () => {
             language: book.language || "N/A",
             description: book.description || "No description available",
           });
-
-          // Check your API for book ID and name
-          await fetchBookFromAPI(isbn, book.title);
         } else {
           setBookDetails(null);
         }
@@ -44,11 +43,12 @@ const BookInfoPage = () => {
         console.error("Error fetching book details from Google API:", error);
         setBookDetails(null);
       } finally {
-        setLoading(false);
+        setLoadingGoogleBook(false);
       }
     };
 
     const fetchBookFromAPI = async (isbn: string, bookName: string) => {
+      setLoadingCustomAPI(true);
       try {
         let response = await fetch(
           `http://127.0.0.1:8080/book_details?isbn=${isbn}`
@@ -78,6 +78,8 @@ const BookInfoPage = () => {
       } catch (error) {
         console.error("Error searching for the book in custom API:", error);
         setMessage("I'm sorry, can't fetch it right now. I'll notify Armaan.");
+      } finally {
+        setLoadingCustomAPI(false);
       }
     };
 
@@ -100,15 +102,18 @@ const BookInfoPage = () => {
       }
     };
 
-    fetchGoogleBookDetails(id as string);
+    fetchGoogleBookDetails(id as string).then(() => {
+      if (bookDetails?.title) {
+        fetchBookFromAPI(id as string, bookDetails.title);
+      }
+    });
   }, [id]);
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (loadingGoogleBook) {
+    return <div>Loading book details...</div>;
   }
 
   if (!bookDetails) {
-    window.location.reload();
     return <div>Book not found</div>;
   }
 
@@ -125,59 +130,47 @@ const BookInfoPage = () => {
             />
           </div>
           <div className="w-full sm:w-2/3 h-[35rem] bg-[#ffe4c9] p-6 rounded-lg shadow-lg border border-gray-200 space-y-4">
-            <h2
-              className="text-4xl font-semibold text-gray-900"
-              style={{ fontFamily: "Poppins" }}
-            >
+            <h2 className="text-4xl font-semibold text-gray-900">
               {bookDetails.title}
             </h2>
-            <h3
-              className="text-xl text-gray-600"
-              style={{ fontFamily: "Poppins" }}
-            >
+            <h3 className="text-xl text-gray-600">
               Author:{" "}
               <span className="font-semibold">{bookDetails.author}</span>
             </h3>
             <div className="flex flex-col sm:flex-row gap-2 text-gray-600">
-              <h4 className="text-lg" style={{ fontFamily: "Poppins" }}>
+              <h4 className="text-lg">
                 ISBN: <span className="font-semibold">{bookDetails.isbn}</span>
               </h4>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 text-gray-600">
-              <h5 className="text-lg" style={{ fontFamily: "Poppins" }}>
+              <h5 className="text-lg">
                 Genre:{" "}
                 <span className="font-semibold">{bookDetails.genre}</span>
               </h5>
-              <h5 className="text-lg" style={{ fontFamily: "Poppins" }}>
+              <h5 className="text-lg">
                 Published:{" "}
                 <span className="font-semibold">{bookDetails.published}</span>
               </h5>
             </div>
-            <h5
-              className="text-lg text-gray-600"
-              style={{ fontFamily: "Poppins" }}
-            >
+            <h5 className="text-lg text-gray-600">
               Publisher:{" "}
               <span className="font-semibold">{bookDetails.publisher}</span>
             </h5>
-            <h5
-              className="text-lg text-gray-600"
-              style={{ fontFamily: "Poppins" }}
-            >
+            <h5 className="text-lg text-gray-600">
               Language:{" "}
               <span className="font-semibold">{bookDetails.language}</span>
             </h5>
-            <p
-              className="text-md text-gray-700 mt-4"
-              style={{ fontFamily: "Raleway, sans-serif" }}
-            >
+            <p className="text-md text-gray-700 mt-4">
               {bookDetails.description.split(" ").slice(0, 65).join(" ")}
               {bookDetails.description.split(" ").length > 65 && "..."}
             </p>
-            <br />
-            {message && (
-              <p className="text-center text-lg text-red-600 mt-4">{message}</p>
-            )}
+            <div className="mt-4 flex justify-center">
+              {loadingCustomAPI ? (
+                <div className="loader">Loading buttons...</div>
+              ) : (
+                <p>{message}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
