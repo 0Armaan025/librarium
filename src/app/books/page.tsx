@@ -5,13 +5,12 @@ import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import BookCard from "./card/BookCard";
 
-type Props = {};
-
-const BooksPage = (props: Props) => {
+const BooksPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [books, setBooks] = useState([]);
   const [genre, setGenre] = useState("fiction");
-  const [startIndex, setStartIndex] = useState(0); // Track the current index for pagination
+  const [startIndex, setStartIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const fetchBooks = async (
@@ -19,6 +18,7 @@ const BooksPage = (props: Props) => {
     selectedGenre: string,
     index: number
   ) => {
+    setIsLoading(true); // Indicate loading
     try {
       const response = await fetch(
         `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
@@ -27,6 +27,12 @@ const BooksPage = (props: Props) => {
       );
       const data = await response.json();
 
+      // Handle cases where no data is returned
+      if (!data.items) {
+        setIsLoading(false);
+        return;
+      }
+
       // Format books and filter out invalid ones
       const formattedBooks = data.items
         ?.map((item: any) => {
@@ -34,10 +40,7 @@ const BooksPage = (props: Props) => {
             (id: any) => id.type === "ISBN_13"
           )?.identifier;
 
-          // Only include books that have a valid ISBN
-          if (!isbn) {
-            return null; // If no ISBN, return null and it will be filtered out
-          }
+          if (!isbn) return null; // Only include books with ISBN
 
           return {
             imageUrl:
@@ -45,10 +48,10 @@ const BooksPage = (props: Props) => {
                 "http://",
                 "https://"
               ) ||
-              "https://imgs.search.brave.com/OC6avjR_4xFvRmk_78v6CvsGCq7Z1dTCyPMjSKTGefo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnNz/dGF0aWMubmV0L3k5/RHBULmpwZw", // Ensure HTTPS for better quality
+              "https://imgs.search.brave.com/OC6avjR_4xFvRmk_78v6CvsGCq7Z1dTCyPMjSKTGefo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnNz/dGF0aWMubmV0L3k5/RHBULmpwZw",
             title: item.volumeInfo.title || "N/A",
             author: item.volumeInfo.authors?.join(", ") || "Unknown Author",
-            isbn: isbn, // Only store books with ISBN
+            isbn,
             genre: item.volumeInfo.categories?.join(", ") || "Unknown Genre",
             published: item.volumeInfo.publishedDate || "N/A",
             publisher: item.volumeInfo.publisher || "Unknown Publisher",
@@ -57,43 +60,45 @@ const BooksPage = (props: Props) => {
               item.volumeInfo.description || "No description available",
           };
         })
-        .filter((book: any) => book !== null); // Remove null entries
+        .filter((book: any) => book !== null);
 
+      // Append new books to the existing list
       setBooks((prevBooks) => [...prevBooks, ...(formattedBooks || [])] as any);
     } catch (error) {
       console.error("Error fetching books:", error);
+    } finally {
+      setIsLoading(false); // Indicate loading completed
     }
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
   const handleSearch = () => {
-    setBooks([]); // Clear existing books for a fresh search
+    setBooks([]); // Clear books for new search
     setStartIndex(0); // Reset pagination
     fetchBooks(searchTerm || "books", genre, 0);
   };
 
   const handleGenreChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setGenre(event.target.value);
-    setBooks([]); // Reset books for new genre
-    setStartIndex(0); // Reset pagination
+    setBooks([]);
+    setStartIndex(0);
     fetchBooks(searchTerm || "books", event.target.value, 0);
   };
 
   useEffect(() => {
-    // Fetch initial books on page load
-    fetchBooks("books", genre, startIndex);
+    // Fetch initial books
+    fetchBooks("books", genre, 0);
   }, []);
 
   useEffect(() => {
     // Infinite scroll functionality
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setStartIndex((prevIndex) => prevIndex + 40); // Increment index for next batch
-          fetchBooks(searchTerm || "books", genre, startIndex + 40);
+        if (entries[0].isIntersecting && !isLoading) {
+          setStartIndex((prevIndex) => {
+            const newIndex = prevIndex + 40;
+            fetchBooks(searchTerm || "books", genre, newIndex);
+            return newIndex;
+          });
         }
       },
       { threshold: 1.0 }
@@ -104,7 +109,7 @@ const BooksPage = (props: Props) => {
     return () => {
       if (observerRef.current) observer.unobserve(observerRef.current);
     };
-  }, [startIndex, genre, searchTerm]);
+  }, [searchTerm, genre, isLoading]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -123,7 +128,7 @@ const BooksPage = (props: Props) => {
               className="px-4 py-2 text-md placeholder-gray-900 bg-[#e4c8ab] text-black w-[70%] rounded-l-md focus:outline-none focus:ring-2 focus:ring-[#000000] focus:ring-opacity-100"
               placeholder="Search for a book..."
               value={searchTerm}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearchTerm(e.target.value)}
               style={{ fontFamily: "Poppins, sans-serif" }}
             />
             <select
@@ -166,6 +171,9 @@ const BooksPage = (props: Props) => {
               </p>
             )}
           </div>
+          {isLoading && (
+            <p className="text-white text-center">Loading more books...</p>
+          )}
           <div ref={observerRef} className="h-10"></div>
         </div>
       </div>

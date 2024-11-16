@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import "./bookinfopage.css";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import { useRouter, useParams } from "next/navigation";
@@ -8,13 +7,14 @@ import { useRouter, useParams } from "next/navigation";
 const BookInfoPage = () => {
   const [bookDetails, setBookDetails] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [message, setMessage] = useState<string>("");
   const router = useRouter();
-  const { id } = useParams(); // 'id' will be the ISBN
+  const { id } = useParams(); // 'id' is the ISBN
 
   useEffect(() => {
     if (!id) return;
 
-    const fetchBookDetails = async (isbn: string) => {
+    const fetchGoogleBookDetails = async (isbn: string) => {
       try {
         const response = await fetch(
           `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
@@ -34,18 +34,73 @@ const BookInfoPage = () => {
             language: book.language || "N/A",
             description: book.description || "No description available",
           });
+
+          // Check your API for book ID and name
+          await fetchBookFromAPI(isbn, book.title);
         } else {
-          setBookDetails(null); // Handle case if no data is found
+          setBookDetails(null);
         }
       } catch (error) {
-        console.error("Error fetching book details:", error);
+        console.error("Error fetching book details from Google API:", error);
         setBookDetails(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBookDetails(id as string);
+    const fetchBookFromAPI = async (isbn: string, bookName: string) => {
+      try {
+        let response = await fetch(
+          `http://127.0.0.1:8080/book_details?isbn=${isbn}`
+        );
+        let data = await response.json();
+
+        if (data.status === "success") {
+          handleBookDownload(data.data.book_id, bookName);
+          return;
+        }
+
+        // If not found by ISBN, try by book name
+        response = await fetch(
+          `http://127.0.0.1:8080/book_details?book_name=${encodeURIComponent(
+            bookName
+          )}`
+        );
+        data = await response.json();
+
+        if (data.status === "success") {
+          handleBookDownload(data.data.book_id, bookName);
+        } else {
+          setMessage(
+            "I'm sorry, can't fetch it right now. I'll notify Armaan."
+          );
+        }
+      } catch (error) {
+        console.error("Error searching for the book in custom API:", error);
+        setMessage("I'm sorry, can't fetch it right now. I'll notify Armaan.");
+      }
+    };
+
+    const handleBookDownload = async (bookId: string, bookName: string) => {
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8080/download?book_id=${bookId}&book_name=${encodeURIComponent(
+            bookName
+          )}`
+        );
+
+        if (response.ok) {
+          setMessage("The PDF has been downloaded successfully!");
+        } else {
+          throw new Error("Failed to download the PDF.");
+        }
+      } catch (error) {
+        console.error("Error downloading the book PDF:", error);
+        setMessage("Failed to download the book PDF.");
+      }
+    };
+
+    fetchGoogleBookDetails(id as string);
   }, [id]);
 
   if (loading) {
@@ -53,6 +108,7 @@ const BookInfoPage = () => {
   }
 
   if (!bookDetails) {
+    window.location.reload();
     return <div>Book not found</div>;
   }
 
@@ -94,7 +150,7 @@ const BookInfoPage = () => {
               </h5>
               <h5 className="text-lg" style={{ fontFamily: "Poppins" }}>
                 Published:{" "}
-                <span className="font-semibold">{bookDetails.published} </span>
+                <span className="font-semibold">{bookDetails.published}</span>
               </h5>
             </div>
             <h5
@@ -119,20 +175,9 @@ const BookInfoPage = () => {
               {bookDetails.description.split(" ").length > 65 && "..."}
             </p>
             <br />
-            <div className="mt-16 flex flex-row justify-center items-center">
-              <button
-                className="p-4 bg-[#242424] hover:bg-[#0b0b0b] transition-all text-white rounded-lg font-semibold text-sm w-72"
-                style={{ fontFamily: "Poppins, sans-serif" }}
-              >
-                Read this book
-              </button>
-              <button
-                className="p-4 border-[1.5px] border-gray-800 ml-4 text-black hover:bg-white transition-all rounded-lg font-semibold text-sm w-72"
-                style={{ fontFamily: "Poppins, sans-serif" }}
-              >
-                Read it later
-              </button>
-            </div>
+            {message && (
+              <p className="text-center text-lg text-red-600 mt-4">{message}</p>
+            )}
           </div>
         </div>
       </div>
