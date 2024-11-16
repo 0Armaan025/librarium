@@ -65,10 +65,10 @@ const BookInfoPage = () => {
             <img
               src={bookDetails.imageUrl}
               alt="Book Cover"
-              className="w-full h-[30rem] rounded-lg shadow-lg"
+              className="w-full h-[35rem] rounded-lg shadow-lg"
             />
           </div>
-          <div className="w-full sm:w-2/3 h-[30rem] bg-[#ffe4c9] p-6 rounded-lg shadow-lg border border-gray-200 space-y-4">
+          <div className="w-full sm:w-2/3 h-[35rem] bg-[#ffe4c9] p-6 rounded-lg shadow-lg border border-gray-200 space-y-4">
             <h2
               className="text-4xl font-semibold text-gray-900"
               style={{ fontFamily: "Poppins" }}
@@ -115,10 +115,11 @@ const BookInfoPage = () => {
               className="text-md text-gray-700 mt-4"
               style={{ fontFamily: "Raleway, sans-serif" }}
             >
-              {bookDetails.description}
+              {bookDetails.description.split(" ").slice(0, 65).join(" ")}
+              {bookDetails.description.split(" ").length > 65 && "..."}
             </p>
             <br />
-            <div className="mt-24 flex flex-row justify-center items-center">
+            <div className="mt-16 flex flex-row justify-center items-center">
               <button
                 className="p-4 bg-[#242424] hover:bg-[#0b0b0b] transition-all text-white rounded-lg font-semibold text-sm w-72"
                 style={{ fontFamily: "Poppins, sans-serif" }}

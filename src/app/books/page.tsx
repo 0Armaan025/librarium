@@ -26,25 +26,39 @@ const BooksPage = (props: Props) => {
         )}&maxResults=40&startIndex=${index}`
       );
       const data = await response.json();
-      const formattedBooks = data.items?.map((item: any) => ({
-        imageUrl:
-          item.volumeInfo.imageLinks?.thumbnail.replace(
-            "http://",
-            "https://"
-          ) ||
-          "https://imgs.search.brave.com/OC6avjR_4xFvRmk_78v6CvsGCq7Z1dTCyPMjSKTGefo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnNz/dGF0aWMubmV0L3k5/RHBULmpwZw", // Ensure HTTPS for better quality
-        title: item.volumeInfo.title || "N/A",
-        author: item.volumeInfo.authors?.join(", ") || "Unknown Author",
-        isbn:
-          item.volumeInfo.industryIdentifiers?.find(
+
+      // Format books and filter out invalid ones
+      const formattedBooks = data.items
+        ?.map((item: any) => {
+          const isbn = item.volumeInfo.industryIdentifiers?.find(
             (id: any) => id.type === "ISBN_13"
-          )?.identifier || "N/A",
-        genre: item.volumeInfo.categories?.join(", ") || "Unknown Genre",
-        published: item.volumeInfo.publishedDate || "N/A",
-        publisher: item.volumeInfo.publisher || "Unknown Publisher",
-        language: item.volumeInfo.language || "N/A",
-        description: item.volumeInfo.description || "No description available",
-      }));
+          )?.identifier;
+
+          // Only include books that have a valid ISBN
+          if (!isbn) {
+            return null; // If no ISBN, return null and it will be filtered out
+          }
+
+          return {
+            imageUrl:
+              item.volumeInfo.imageLinks?.thumbnail.replace(
+                "http://",
+                "https://"
+              ) ||
+              "https://imgs.search.brave.com/OC6avjR_4xFvRmk_78v6CvsGCq7Z1dTCyPMjSKTGefo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnNz/dGF0aWMubmV0L3k5/RHBULmpwZw", // Ensure HTTPS for better quality
+            title: item.volumeInfo.title || "N/A",
+            author: item.volumeInfo.authors?.join(", ") || "Unknown Author",
+            isbn: isbn, // Only store books with ISBN
+            genre: item.volumeInfo.categories?.join(", ") || "Unknown Genre",
+            published: item.volumeInfo.publishedDate || "N/A",
+            publisher: item.volumeInfo.publisher || "Unknown Publisher",
+            language: item.volumeInfo.language || "N/A",
+            description:
+              item.volumeInfo.description || "No description available",
+          };
+        })
+        .filter((book: any) => book !== null); // Remove null entries
+
       setBooks((prevBooks) => [...prevBooks, ...(formattedBooks || [])] as any);
     } catch (error) {
       console.error("Error fetching books:", error);
