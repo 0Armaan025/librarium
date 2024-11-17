@@ -12,6 +12,8 @@ const BookInfoPage = () => {
   const router = useRouter();
   const { id } = useParams(); // 'id' is the ISBN
 
+  const API_KEY = "AIzaSyC2NLvmuX8JVubjHRBD30JF0pcjtEe7T34";
+
   useEffect(() => {
     if (!id) return;
 
@@ -19,7 +21,7 @@ const BookInfoPage = () => {
       setLoadingGoogleBook(true);
       try {
         const response = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+          `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`
         );
         const data = await response.json();
 
@@ -114,6 +116,7 @@ const BookInfoPage = () => {
   }
 
   if (!bookDetails) {
+    window.location.reload();
     return <div>Book not found</div>;
   }
 

@@ -13,6 +13,8 @@ const BooksPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
 
+  const API_KEY = "AIzaSyC2NLvmuX8JVubjHRBD30JF0pcjtEe7T34"; // Replace this with your actual Google Books API key
+
   const fetchBooks = async (
     query: string,
     selectedGenre: string,
@@ -23,24 +25,22 @@ const BooksPage = () => {
       const response = await fetch(
         `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
           query + " " + selectedGenre
-        )}&maxResults=40&startIndex=${index}`
+        )}&maxResults=40&startIndex=${index}&key=${API_KEY}`
       );
       const data = await response.json();
 
-      // Handle cases where no data is returned
       if (!data.items) {
         setIsLoading(false);
         return;
       }
 
-      // Format books and filter out invalid ones
       const formattedBooks = data.items
         ?.map((item: any) => {
           const isbn = item.volumeInfo.industryIdentifiers?.find(
             (id: any) => id.type === "ISBN_13"
           )?.identifier;
 
-          if (!isbn) return null; // Only include books with ISBN
+          if (!isbn) return null;
 
           return {
             imageUrl:
@@ -62,12 +62,11 @@ const BooksPage = () => {
         })
         .filter((book: any) => book !== null);
 
-      // Append new books to the existing list
       setBooks((prevBooks) => [...prevBooks, ...(formattedBooks || [])] as any);
     } catch (error) {
       console.error("Error fetching books:", error);
     } finally {
-      setIsLoading(false); // Indicate loading completed
+      setIsLoading(false);
     }
   };
 
