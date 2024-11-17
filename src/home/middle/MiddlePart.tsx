@@ -1,5 +1,6 @@
 import React from "react";
 import "./middlepart.css";
+import Link from "next/link";
 
 type Props = {};
 
@@ -44,8 +45,10 @@ const MiddlePart = (props: Props) => {
           </h5>
           <br />
           <div className="buttonsDiv">
-            <button className="exploreBtn">Explore now</button>
-            <button className="arrowBtn">-&gt;</button>
+            <Link href="/books">
+              <button className="exploreBtn">Explore now</button>
+              <button className="arrowBtn">-&gt;</button>
+            </Link>
           </div>
         </div>
         <div className="right-box ">

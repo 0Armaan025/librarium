@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import "./loginpage.css";
+import { useRouter } from "next/navigation";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { app, db , auth} from "../../firebase/firebaseConfig";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import PasswordInput from "@/components/password-input/PasswordInput";
@@ -10,6 +12,8 @@ type Props = {};
 const LoginPage = (props: Props) => {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [error, setError] = useState(""); // State for handling errors
+  const router = useRouter();
 
   const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(event.target.value);
@@ -17,6 +21,28 @@ const LoginPage = (props: Props) => {
 
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(event.target.value);
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Please fill in both fields.");
+      return;
+    }
+
+    
+    try {
+      // Sign in the user with email and password
+      await signInWithEmailAndPassword(auth, email, password);
+      // Redirect to dashboard after successful login
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError("Invalid credentials, please try again.");
+    }
+  };
+
+  const handleGuestLogin = () => {
+    // Redirect to books page for guest login
+    router.push("/books");
   };
 
   return (
@@ -35,7 +61,6 @@ const LoginPage = (props: Props) => {
               Don't have an account?{" "}
               <span className="underline cursor-pointer">Sign up!</span>
             </h5>
-
             <input
               type="email"
               className="px-4 ml-4 mr-4 mt-8 p-2 text-md bg-[#e4c8ab] text-black w-[88%] placeholder-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-[#000000] focus:ring-opacity-100"
@@ -45,7 +70,12 @@ const LoginPage = (props: Props) => {
               style={{ fontFamily: "Poppins, sans-serif" }}
             />
             <PasswordInput value={password} onChange={handlePasswordChange} />
+            {error && (
+              <p className="text-red-500 text-sm ml-4 mt-2">{error}</p>
+            )}{" "}
+            {/* Display error if any */}
             <button
+              onClick={handleLogin}
               style={{ fontFamily: "Poppins, sans-serif" }}
               className="w-[88%] rounded-md mt-2 h-12 align-center justify-center ml-4 text-white transition-all hover:bg-[#434343] bg-[#333333]"
             >
@@ -57,6 +87,7 @@ const LoginPage = (props: Props) => {
               </h4>
             </center>
             <button
+              onClick={handleGuestLogin}
               style={{ fontFamily: "Poppins, sans-serif" }}
               className="w-[88%] rounded-md mt-2 h-12 align-center justify-center ml-4 text-black hover:text-black transition-all border-[1.2px] border-black hover:bg-white hover:bg-opacity-60 bg-transparent"
             >

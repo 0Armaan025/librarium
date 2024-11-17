@@ -112,12 +112,16 @@ const BookInfoPage = () => {
   }, [id]);
 
   if (loadingGoogleBook) {
-    return <div>Loading book details...</div>;
+    return <div className="text-white text-xl">Loading book details...</div>;
   }
 
   if (!bookDetails) {
     window.location.reload();
-    return <div>Book not found</div>;
+    return (
+      <div className="text-white text-xl">
+        Book not found, restarting don't close please (:{" "}
+      </div>
+    );
   }
 
   return (
