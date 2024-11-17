@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import "./bookspage.css";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import BookCard from "./card/BookCard";
@@ -13,7 +12,7 @@ const BooksPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
 
-  const API_KEY = "AIzaSyC2NLvmuX8JVubjHRBD30JF0pcjtEe7T34"; // Replace this with your actual Google Books API key
+  const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY; // Use environment variable for API Key
 
   const fetchBooks = async (
     query: string,
@@ -78,8 +77,8 @@ const BooksPage = () => {
 
   const handleGenreChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setGenre(event.target.value);
-    setBooks([]);
-    setStartIndex(0);
+    setBooks([]); // Reset books on genre change
+    setStartIndex(0); // Reset pagination
     fetchBooks(searchTerm || "books", event.target.value, 0);
   };
 
@@ -114,17 +113,17 @@ const BooksPage = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <div className="flex-grow">
-        <div className="booksPage">
+        <div className="booksPage px-4 sm:px-8 lg:px-16">
           <h2
-            className="ml-4 mt-6 text-white text-5xl"
+            className="ml-4 mt-6 text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
             style={{ fontFamily: "Patrick Hand, cursive" }}
           >
-            Time to learn new things... :&#41;
+            Time to learn new things... :)
           </h2>
-          <div className="flex items-center justify-center mt-8">
+          <div className="flex items-center justify-center mt-8 flex-wrap">
             <input
               type="text"
-              className="px-4 py-2 text-md placeholder-gray-900 bg-[#e4c8ab] text-black w-[70%] rounded-l-md focus:outline-none focus:ring-2 focus:ring-[#000000] focus:ring-opacity-100"
+              className="px-4 py-2 text-md placeholder-gray-900 bg-[#e4c8ab] text-black w-full sm:w-[70%] md:w-[50%] lg:w-[40%] xl:w-[30%] rounded-l-md focus:outline-none focus:ring-2 focus:ring-[#000000] focus:ring-opacity-100"
               placeholder="Search for a book..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
