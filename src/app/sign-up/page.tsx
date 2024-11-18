@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/firebaseConfig"; // Import from the updated firebaseConfig
+import { db, auth } from "@/firebase/firebaseConfig"; // Import from the updated firebaseConfig
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import PasswordInput from "@/components/password-input/PasswordInput";
@@ -24,11 +24,15 @@ const SignUpPage = () => {
   const [userExists, setUserExists] = useState(false);
   const [user, setUser] = useState(null); // State to hold the logged-in user
   const router = useRouter();
-  const auth = getAuth();
 
   // Ensure persistence across sessions and page reloads
   useEffect(() => {
-    // Set the persistence for Firebase Authentication
+    if (auth.currentUser) {
+      window.location.href = "/dashboard";
+    } else {
+      console.log("No user logged in");
+    }
+
     setPersistence(auth, browserLocalPersistence).catch((err) => {
       console.error("Error setting persistence", err);
     });
@@ -39,6 +43,7 @@ const SignUpPage = () => {
         setUser(currentUser as any); // Set user state if user is logged in
 
         console.log(currentUser);
+        window.location.href = "/dashboard";
       } else {
         setUser(null); // Clear user state if logged out
       }
@@ -78,6 +83,7 @@ const SignUpPage = () => {
         firstName,
         armaanCounter,
         lastName,
+        password,
         email,
         createdAt: new Date().toISOString(),
         uid: userCredential.user.uid,

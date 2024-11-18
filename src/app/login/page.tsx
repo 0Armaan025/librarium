@@ -1,8 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { app, db , auth} from "../../firebase/firebaseConfig";
+import {
+  browserLocalPersistence,
+  getAuth,
+  onAuthStateChanged,
+  setPersistence,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { app, db, auth } from "../../firebase/firebaseConfig";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import PasswordInput from "@/components/password-input/PasswordInput";
@@ -12,6 +18,7 @@ type Props = {};
 const LoginPage = (props: Props) => {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [user, setUser] = useState(null); // State to hold the logged-in user
   const [error, setError] = useState(""); // State for handling errors
   const router = useRouter();
 
@@ -29,7 +36,6 @@ const LoginPage = (props: Props) => {
       return;
     }
 
-    
     try {
       // Sign in the user with email and password
       await signInWithEmailAndPassword(auth, email, password);
@@ -39,6 +45,26 @@ const LoginPage = (props: Props) => {
       setError("Invalid credentials, please try again.");
     }
   };
+
+  useEffect(() => {
+    setPersistence(auth, browserLocalPersistence).catch((err) => {
+      console.error("Error setting persistence", err);
+    });
+
+    // Listen for authentication state changes
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser as any);
+
+        console.log(currentUser);
+        window.location.href = "/dashboard";
+      } else {
+        setUser(null); // Clear user state if logged out
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
 
   const handleGuestLogin = () => {
     // Redirect to books page for guest login

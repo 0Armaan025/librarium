@@ -2,13 +2,16 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 
 const BookInfoPage = () => {
   const [bookDetails, setBookDetails] = useState<any>(null);
   const [loadingGoogleBook, setLoadingGoogleBook] = useState<boolean>(true);
-  const [loadingCustomAPI, setLoadingCustomAPI] = useState<boolean>(true);
+  const [loadingCustomAPI, setLoadingCustomAPI] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [bookOptions, setBookOptions] = useState<any[]>([]);
+  const [loadingModal, setLoadingModal] = useState<boolean>(false);
 
   const { id } = useParams(); // 'id' is the ISBN
   const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
@@ -45,70 +48,40 @@ const BookInfoPage = () => {
     }
   };
 
-  const fetchBookFromAPI = async (isbn: string, bookName: string) => {
+  const fetchBookOptions = async (bookName: string) => {
+    setLoadingModal(true);
     setLoadingCustomAPI(true);
     try {
-      let response = await fetch(
-        `http://127.0.0.1:8080/book_details?isbn=${isbn}`
+      const response = await fetch(
+        `http://127.0.0.1:8080/search?book_name=${encodeURIComponent(bookName)}`
       );
-      let data = await response.json();
+      const data = await response.json();
 
-      if (data.status === "success") {
-        handleBookDownload(data.data.book_id, bookName);
-        return;
-      }
-
-      // If not found by ISBN, try by book name
-      response = await fetch(
-        `http://127.0.0.1:8080/book_details?book_name=${encodeURIComponent(
-          bookName
-        )}`
-      );
-      data = await response.json();
-
-      if (data.status === "success") {
-        handleBookDownload(data.data.book_id, bookName);
+      if (data.data && data.data.length > 0) {
+        setBookOptions(data.data);
+        setModalVisible(true);
       } else {
-        setMessage("Sorry, can't fetch it right now. I'll notify Armaan.");
+        setMessage("No books found in the custom API.");
       }
     } catch (error) {
       console.error("Error searching for the book in custom API:", error);
-      setMessage("Sorry, can't fetch it right now. I'll notify Armaan.");
+      setMessage("Sorry, can't fetch it right now.");
     } finally {
       setLoadingCustomAPI(false);
-    }
-  };
-
-  const handleBookDownload = async (bookId: string, bookName: string) => {
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8080/download?book_id=${bookId}&book_name=${encodeURIComponent(
-          bookName
-        )}`
-      );
-
-      if (response.ok) {
-        setMessage("The PDF has been downloaded successfully!");
-      } else {
-        throw new Error("Failed to download the PDF.");
-      }
-    } catch (error) {
-      console.error("Error downloading the book PDF:", error);
-      setMessage("Failed to download the book PDF.");
+      setLoadingModal(false);
     }
   };
 
   useEffect(() => {
     if (!id) return;
-
     fetchGoogleBookDetails(id as any);
   }, [id]);
 
-  useEffect(() => {
+  const handleReadBookClick = () => {
     if (bookDetails?.title) {
-      fetchBookFromAPI(id as string, bookDetails.title);
+      fetchBookOptions(bookDetails.title);
     }
-  }, [bookDetails, id]);
+  };
 
   if (loadingGoogleBook) {
     return <div className="text-white text-xl">Loading book details...</div>;
@@ -166,12 +139,21 @@ const BookInfoPage = () => {
                 {bookDetails.description.split(" ").slice(0, 65).join(" ")}
                 {bookDetails.description.split(" ").length > 65 && "..."}
               </p>
-              <div className="mt-4 flex justify-center">
-                {loadingCustomAPI ? (
-                  <div className="loader">Loading buttons...</div>
-                ) : (
-                  <p>{message}</p>
-                )}
+              <div className="flex gap-4 mt-6">
+                <button
+                  className={`px-4 py-2 text-white rounded ${
+                    loadingModal
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-500"
+                  }`}
+                  onClick={handleReadBookClick}
+                  disabled={loadingModal}
+                >
+                  {loadingModal ? "Loading..." : "Read Book"}
+                </button>
+                <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">
+                  Read Later
+                </button>
               </div>
             </div>
           </div>
@@ -182,6 +164,45 @@ const BookInfoPage = () => {
         )}
       </div>
       <Footer />
+      {modalVisible && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
+          <div className="bg-gray-600 w-full max-w-2xl h-3/4 p-6 rounded-lg shadow-lg space-y-4 overflow-y-auto">
+            <h2
+              className="text-2xl text-white font-bold"
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              Select a Book
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {bookOptions.map((book) => (
+                <div
+                  key={book.id}
+                  className="border rounded-lg p-4 shadow bg-gray-300 transition-all hover:bg-gray-100 cursor-pointer"
+                  onClick={() => setModalVisible(false)}
+                >
+                  <h3 className="font-semibold">
+                    {book.title} , {book.isbn}
+                  </h3>
+                  <a
+                    href={book.detail_page_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 underline"
+                  >
+                    Read this
+                  </a>
+                </div>
+              ))}
+            </div>
+            <button
+              className="mt-4 px-4 py-2 bg-gray-800 text-white rounded"
+              onClick={() => setModalVisible(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
