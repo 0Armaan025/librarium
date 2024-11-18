@@ -9,8 +9,6 @@ const FlipbookPage: React.FC = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false); // Loading state
 
-  
-
   // Handle PDF upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

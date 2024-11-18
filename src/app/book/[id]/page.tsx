@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import { useParams } from "next/navigation";
+import { setCookie } from "cookies-next"; // Import the setCookie utility
 
 const BookInfoPage = () => {
   const [bookDetails, setBookDetails] = useState<any>(null);
@@ -27,7 +28,7 @@ const BookInfoPage = () => {
       if (data.items && data.items.length > 0) {
         const book = data.items[0].volumeInfo;
         setBookDetails({
-          imageUrl: book.imageLinks?.thumbnail || "",
+          imageUrl: book.imageLinks?.thumbnail || "fallback_image_url", // Fallback image if missing
           title: book.title || "N/A",
           author: book.authors?.join(", ") || "Unknown Author",
           isbn: isbn,
@@ -56,6 +57,7 @@ const BookInfoPage = () => {
         `http://127.0.0.1:8080/search?book_name=${encodeURIComponent(bookName)}`
       );
       const data = await response.json();
+      console.log(data); // Inspect the data to ensure it's correct
 
       if (data.data && data.data.length > 0) {
         setBookOptions(data.data);
@@ -72,16 +74,51 @@ const BookInfoPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (!id) return;
-    fetchGoogleBookDetails(id as any);
-  }, [id]);
-
   const handleReadBookClick = () => {
     if (bookDetails?.title) {
       fetchBookOptions(bookDetails.title);
     }
   };
+
+  const handleBookOptionClick = async (book: any) => {
+    const { mirror_links } = book;
+    alert("mirror url is " + mirror_links[0]);
+
+    if (!mirror_links[0]) {
+      setMessage("No mirror URL provided.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://127.0.0.1:8080/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mirror_url: mirror_links[0] }), // Fix: Include the mirror link in the request body
+      });
+
+      const data = await response.json();
+      console.log(data); // Log response data to inspect the returned download_url and file_extension
+
+      if (data.download_url && data.file_extension) {
+        setCookie("download_url", data.download_url, { maxAge: 60 * 60 });
+        setCookie("file_extension", data.file_extension, { maxAge: 60 * 60 });
+        setModalVisible(false);
+        setMessage("Book details saved!");
+      } else {
+        setMessage("Failed to retrieve download information.");
+      }
+    } catch (error) {
+      console.error("Error during book download request:", error);
+      setMessage("Error while processing the download.");
+    }
+  };
+
+  useEffect(() => {
+    if (!id) return;
+    fetchGoogleBookDetails(id as any);
+  }, [id]);
 
   if (loadingGoogleBook) {
     return <div className="text-white text-xl">Loading book details...</div>;
@@ -171,34 +208,30 @@ const BookInfoPage = () => {
               className="text-2xl text-white font-bold"
               style={{ fontFamily: "Poppins, sans-serif" }}
             >
-              Select a Book
+              Select a Book to Download
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {bookOptions.map((book) => (
-                <div
-                  key={book.id}
-                  className="border rounded-lg p-4 shadow bg-gray-300 transition-all hover:bg-gray-100 cursor-pointer"
-                  onClick={() => setModalVisible(false)}
-                >
-                  <h3 className="font-semibold">
-                    {book.title} , {book.isbn}
-                  </h3>
-                  <a
-                    href={book.detail_page_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 underline"
+            {loadingCustomAPI ? (
+              <div className="text-white text-xl">Loading options...</div>
+            ) : (
+              <div className="space-y-4">
+                {bookOptions.map((book, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-200 p-4 rounded-lg cursor-pointer hover:bg-gray-300"
+                    onClick={() => handleBookOptionClick(book)}
                   >
-                    Read this
-                  </a>
-                </div>
-              ))}
-            </div>
+                    <h3 className="text-lg text-gray-800">{book.title}</h3>
+                    <p className="text-sm text-gray-600">{book.author}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {message && <div className="text-white mt-4">{message}</div>}
             <button
-              className="mt-4 px-4 py-2 bg-gray-800 text-white rounded"
+              className="absolute top-4 right-4 text-white text-xl"
               onClick={() => setModalVisible(false)}
             >
-              Close
+              X
             </button>
           </div>
         </div>
