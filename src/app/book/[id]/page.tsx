@@ -172,7 +172,10 @@ const BookInfoPage = () => {
                 Language:{" "}
                 <span className="font-semibold">{bookDetails.language}</span>
               </h5>
-              <p className="text-md text-gray-700 mt-4">
+              <p
+                className="text-md text-lg text-gray-800 mt-4"
+                style={{ fontFamily: "Poppins, sans-serif" }}
+              >
                 {bookDetails.description.split(" ").slice(0, 65).join(" ")}
                 {bookDetails.description.split(" ").length > 65 && "..."}
               </p>
