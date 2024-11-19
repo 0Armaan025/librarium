@@ -4,6 +4,9 @@ import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import BookCard from "./card/BookCard";
 
+import { collection, addDoc } from "firebase/firestore";
+import { auth, db } from "@/firebase/firebaseConfig";
+
 const BooksPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [books, setBooks] = useState([]);
@@ -69,10 +72,27 @@ const BooksPage = () => {
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setBooks([]); // Clear books for new search
     setStartIndex(0); // Reset pagination
     fetchBooks(searchTerm || "books", genre, 0);
+
+    // Save search to Firestore
+
+    const user = auth.currentUser;
+    const userName = user?.email || "Anonymous";
+
+    try {
+      await addDoc(collection(db, "searches"), {
+        searchTerm: searchTerm || "books",
+        genre,
+        userName,
+        timestamp: new Date(),
+      });
+      console.log("Search saved successfully");
+    } catch (error) {
+      console.error("Error saving search:", error);
+    }
   };
 
   const handleGenreChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -120,6 +140,11 @@ const BooksPage = () => {
           >
             Time to learn new things... :)
           </h2>
+          <h4 className="ml-5 mt-2 text-gray-200">
+            Disclaimer: You might need to click the search button various times
+            I will fix it , sorry :(
+          </h4>
+
           <div className="flex items-center justify-center mt-8 flex-wrap">
             <input
               type="text"

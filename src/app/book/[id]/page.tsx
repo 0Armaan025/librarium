@@ -3,7 +3,11 @@ import React, { useEffect, useState } from "react";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import { useParams } from "next/navigation";
-import { setCookie } from "cookies-next"; // Import the setCookie utility
+import { setCookie } from "cookies-next";
+import { db, auth } from "@/firebase/firebaseConfig";
+import "firebase/firestore";
+import "firebase/auth";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 const BookInfoPage = () => {
   const [bookDetails, setBookDetails] = useState<any>(null);
@@ -12,10 +16,11 @@ const BookInfoPage = () => {
   const [message, setMessage] = useState<string>("");
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [bookOptions, setBookOptions] = useState<any[]>([]);
-  const [loadingModal, setLoadingModal] = useState<boolean>(false);
 
-  const { id } = useParams(); // 'id' is the ISBN
+  const { id } = useParams();
   const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+
+  const [loadingModal, setLoadingModal] = useState<boolean>(false);
 
   const fetchGoogleBookDetails = async (isbn: string) => {
     setLoadingGoogleBook(true);
@@ -28,7 +33,7 @@ const BookInfoPage = () => {
       if (data.items && data.items.length > 0) {
         const book = data.items[0].volumeInfo;
         setBookDetails({
-          imageUrl: book.imageLinks?.thumbnail || "fallback_image_url", // Fallback image if missing
+          imageUrl: book.imageLinks?.thumbnail || "fallback_image_url",
           title: book.title || "N/A",
           author: book.authors?.join(", ") || "Unknown Author",
           isbn: isbn,
@@ -57,7 +62,7 @@ const BookInfoPage = () => {
         `http://127.0.0.1:8080/search?book_name=${encodeURIComponent(bookName)}`
       );
       const data = await response.json();
-      console.log(data); // Inspect the data to ensure it's correct
+      console.log(data);
 
       if (data.data && data.data.length > 0) {
         setBookOptions(data.data);
@@ -74,8 +79,51 @@ const BookInfoPage = () => {
     }
   };
 
+  const updateReadBooks = async (isbn: string, action: "read" | "later") => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const userEmail = user.email!;
+    const userRef = doc(db, "users", userEmail);
+
+    try {
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        console.log("User document not found");
+        return;
+      }
+
+      const userData = userDoc.data();
+      const readBooks = userData?.read_books || [];
+      const readLaterBooks = userData?.read_later || [];
+
+      // Avoid adding the same book twice
+      if (action === "read") {
+        if (!readBooks.includes(isbn) && !readLaterBooks.includes(isbn)) {
+          await updateDoc(userRef, {
+            read_books: [...readBooks, isbn], // Adds the ISBN to the read_books array
+          });
+          console.log(`Book added to read_books as ${action}`);
+        }
+      } else if (action === "later") {
+        if (!readLaterBooks.includes(isbn) && !readBooks.includes(isbn)) {
+          await updateDoc(userRef, {
+            read_later: [...readLaterBooks, isbn], // Adds the ISBN to the read_later array
+          });
+          console.log(`Book added to read_later as ${action}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating books:", error);
+    }
+  };
+
   const handleReadBookClick = () => {
     if (bookDetails?.title) {
+      updateReadBooks(bookDetails.isbn, "read");
       fetchBookOptions(bookDetails.title);
     }
   };
@@ -95,11 +143,11 @@ const BookInfoPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ mirror_url: mirror_links[0] }), // Fix: Include the mirror link in the request body
+        body: JSON.stringify({ mirror_url: mirror_links[0] }),
       });
 
       const data = await response.json();
-      console.log(data); // Log response data to inspect the returned download_url and file_extension
+      console.log(data);
 
       if (data.download_url && data.file_extension) {
         setCookie("download_url", data.download_url, { maxAge: 60 * 60 });
@@ -112,6 +160,12 @@ const BookInfoPage = () => {
     } catch (error) {
       console.error("Error during book download request:", error);
       setMessage("Error while processing the download.");
+    }
+  };
+
+  const handleReadLaterClick = () => {
+    if (bookDetails?.isbn) {
+      updateReadBooks(bookDetails.isbn, "later");
     }
   };
 
@@ -138,16 +192,9 @@ const BookInfoPage = () => {
               />
             </div>
             <div className="w-full sm:w-2/3 h-[36rem] bg-[#ffe4c9] p-6 rounded-lg shadow-lg border border-gray-200 space-y-4">
-              <h2
-                className="text-4xl font-semibold text-gray-900"
-                style={{ fontFamily: "Poppins, sans-serif" }}
-              >
+              <h2 className="text-4xl font-semibold text-gray-900">
                 {bookDetails.title}
               </h2>
-              <h3 className="text-xl text-gray-600">
-                Author:{" "}
-                <span className="font-semibold">{bookDetails.author}</span>
-              </h3>
               <div className="flex flex-col sm:flex-row gap-2 text-gray-600">
                 <h4 className="text-lg">
                   ISBN:{" "}
@@ -176,69 +223,30 @@ const BookInfoPage = () => {
                 className="text-md text-lg text-gray-800 mt-4"
                 style={{ fontFamily: "Poppins, sans-serif" }}
               >
-                {bookDetails.description.split(" ").slice(0, 65).join(" ")}
-                {bookDetails.description.split(" ").length > 65 && "..."}
+                {bookDetails.description.split(" ").slice(0, 50).join(" ")}
+                {bookDetails.description.split(" ").length > 50 && "..."}
               </p>
-              <div className="flex gap-4 mt-6">
+              <div className="flex gap-4 mt-8">
                 <button
-                  className={`px-4 py-2 text-white rounded ${
-                    loadingModal
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-500"
-                  }`}
+                  className="bg-orange-400 text-white px-8 py-3 rounded-xl font-semibold hover:bg-orange-500"
                   onClick={handleReadBookClick}
-                  disabled={loadingModal}
                 >
-                  {loadingModal ? "Loading..." : "Read Book"}
+                  Read Book
                 </button>
-                <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">
+                <button
+                  className="bg-gray-200 text-gray-900 px-8 py-3 rounded-xl font-semibold hover:bg-gray-300"
+                  onClick={handleReadLaterClick}
+                >
                   Read Later
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          <div className="text-white text-xl">
-            Book not found, please try again later.
-          </div>
+          <div className="text-xl font-medium text-gray-700">{message}</div>
         )}
       </div>
       <Footer />
-      {modalVisible && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
-          <div className="bg-gray-600 w-full max-w-2xl h-3/4 p-6 rounded-lg shadow-lg space-y-4 overflow-y-auto">
-            <h2
-              className="text-2xl text-white font-bold"
-              style={{ fontFamily: "Poppins, sans-serif" }}
-            >
-              Select a Book to Download
-            </h2>
-            {loadingCustomAPI ? (
-              <div className="text-white text-xl">Loading options...</div>
-            ) : (
-              <div className="space-y-4">
-                {bookOptions.map((book, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-200 p-4 rounded-lg cursor-pointer hover:bg-gray-300"
-                    onClick={() => handleBookOptionClick(book)}
-                  >
-                    <h3 className="text-lg text-gray-800">{book.title}</h3>
-                    <p className="text-sm text-gray-600">{book.author}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            {message && <div className="text-white mt-4">{message}</div>}
-            <button
-              className="absolute top-4 right-4 text-white text-xl"
-              onClick={() => setModalVisible(false)}
-            >
-              X
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

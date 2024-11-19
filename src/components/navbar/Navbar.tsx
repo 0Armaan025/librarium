@@ -21,6 +21,9 @@ const Navbar = () => {
           <Link href="/forum">
             <div className="text-md titleMiddleText text-white">Forum</div>
           </Link>
+          <Link href="/about">
+            <div className="text-md titleMiddleText text-white">About</div>
+          </Link>
         </div>
         <Link href="/dashboard">
           <button className="dashboardBtn text-sm cursor-pointer hover:bg-white text-white transition-all bg-transparent border-[1.5px] border-[#898989] hover:text-black p-2 w-24 sm:w-28 lg:w-32 rounded">
