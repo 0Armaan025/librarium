@@ -126,7 +126,12 @@ const DiscussionPage = () => {
   if (loading) {
     return (
       <div className="text-center py-10">
-        <p className="text-xl font-semibold">Loading thread...</p>
+        <p
+          className="text-xl font-semibold text-white"
+          style={{ fontFamily: "Poppins, sans-serif" }}
+        >
+          Loading thread...
+        </p>
       </div>
     );
   }

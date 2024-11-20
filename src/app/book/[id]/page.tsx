@@ -96,7 +96,7 @@ const BookInfoPage = () => {
 
     const userEmail = user.email!;
     const userRef = doc(db, "users", userEmail);
-    toggleGlobalLoading(true); // Start global loading
+    toggleGlobalLoading(true);
 
     try {
       const userDoc = await getDoc(userRef);
