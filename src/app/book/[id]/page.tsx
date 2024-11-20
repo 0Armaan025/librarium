@@ -130,14 +130,18 @@ const BookInfoPage = () => {
     }
   };
 
-  const handleReadBookClick = () => {
-    toggleGlobalLoading(true);
-    if (bookDetails?.title) {
-      updateReadBooks(bookDetails.isbn, "read");
-      fetchBookOptions(bookDetails.title);
-      toggleGlobalLoading(false);
+  const handleReadBookClick = async () => {
+    try {
+      if (!bookDetails?.title) return;
+
+      toggleGlobalLoading(true); // Start loading
+      await updateReadBooks(bookDetails.isbn, "read"); // Wait for the book to be added
+      await fetchBookOptions(bookDetails.title); // Wait for book options to be fetched
+    } catch (error) {
+      console.error("Error handling 'Read Book' click:", error);
+    } finally {
+      toggleGlobalLoading(false); // Stop loading
     }
-    toggleGlobalLoading(false);
   };
 
   const handleBookOptionClick = async (book: any) => {
