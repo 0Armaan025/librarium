@@ -33,10 +33,47 @@ const AboutPage = (props: Props) => {
             Please don't complain if you don't find the book 🥹, as I don't have
             a big database.
           </li>
+
           <li>
             I'm just getting data from libgen.is, but soon I'll try to find a
             way to get data from anna-archive too, for a bigger database.
           </li>
+          <li>
+            I am aware that there are a lot of bugs/errors, and I'm working on
+            fixing them, you can def. report in the feedback section! 😄
+          </li>
+          <li>
+            After a few days, make sure to check
+            "the-words-of-the-unknown.vercel.app" too, a website where
+            "anonymous" can write a status/message they want to convey, perhaps
+            "anon-speaks.vercel.app" is a better name? 🤔 do let me know in the
+            feedback thingy.
+          </li>
+          <li>I def. didn't take any help from ChatGPT (that's a lie).</li>
+          <li>
+            If you think this is hard to make, you're wrong, this is a child's
+            game, this is super easy to create and anyone can do it including
+            you.
+          </li>
+          <li>
+            <a
+              className="underline text-blue-500 "
+              target="new"
+              href="https://github.com/0Armaan025/librarium"
+            >
+              Some cool code here (website)
+            </a>
+          </li>
+          <li>
+            <a
+              className="underline text-blue-500 "
+              target="new"
+              href="https://github.com/0Armaan025/python-pdf-to-image"
+            >
+              Some cool code here (api, eh)
+            </a>
+          </li>
+
           <li>Till then, enjoy this! :D</li>
           <li>
             Do let me know if you have any feedback{" "}

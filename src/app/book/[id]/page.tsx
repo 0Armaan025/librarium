@@ -54,6 +54,7 @@ const BookInfoPage = () => {
         setMessage("Book not found in Google Books API.");
       }
     } catch (error) {
+      window.location.reload();
       console.error("Error fetching book details from Google API:", error);
       setMessage("Error fetching details from Google Books.");
     } finally {
@@ -147,7 +148,8 @@ const BookInfoPage = () => {
 
   const handleBookOptionClick = async (book: any) => {
     const { mirror_links } = book;
-    alert("Mirror URL is " + mirror_links[0]);
+
+    toggleGlobalLoading(true);
 
     if (!mirror_links[0]) {
       setMessage("No mirror URL provided.");

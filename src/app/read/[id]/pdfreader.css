@@ -1,0 +1,39 @@
+.pdf-reader {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.pdf-content {
+  margin-bottom: 20px;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+button {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.prev-arrow,
+.next-arrow {
+  font-size: 18px;
+}
