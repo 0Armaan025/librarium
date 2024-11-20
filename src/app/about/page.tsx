@@ -26,7 +26,7 @@ const AboutPage = (props: Props) => {
         </h4>
         <ul
           style={{ fontFamily: "Sour Gummy, sans-serif" }}
-          className="text-white text-base sm:text-lg md:text-xl list-disc ml-8 mt-2"
+          className="text-white text-base sm:text-lg md:text-xl list-disc ml-8 mt-2 mb-8"
         >
           <li>I created this website as a wrapper of libgen.is books.</li>
           <li>
@@ -41,6 +41,17 @@ const AboutPage = (props: Props) => {
           <li>
             I am aware that there are a lot of bugs/errors, and I'm working on
             fixing them, you can def. report in the feedback section! 😄
+          </li>
+          <li>
+            Fun fact: if you are here, you probably just opened the site,
+            warning: this may frustate you, or bore you coz it's gonna take some
+            of your time , so maybe try exploring it in your spare/free time.
+          </li>
+          <li>Fun fact 2: it took only 3909 lines of code to make this</li>
+          <li>
+            Sorry, I'm not a designer or a creative person, so the design isn't
+            good, but feel free to recommend me designs for the next fun
+            project!
           </li>
           <li>
             After a few days, make sure to check
@@ -75,7 +86,7 @@ const AboutPage = (props: Props) => {
           </li>
 
           <li>Till then, enjoy this! :D</li>
-          <li>
+          <li className="mb-4">
             Do let me know if you have any feedback{" "}
             <Link href="/feedback" className="text-purple-500 underline">
               here
