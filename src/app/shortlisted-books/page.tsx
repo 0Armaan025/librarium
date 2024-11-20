@@ -4,7 +4,7 @@ import Footer from "@/components/footer/Footer";
 import Navbar from "@/components/navbar/Navbar";
 import LeftSideBar from "@/components/left-side-bar/LeftSideBar";
 import { db, auth } from "@/firebase/firebaseConfig"; // Ensure you've imported Firebase config
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
 
@@ -69,6 +69,24 @@ const ShortListedBooksPage = (props: Props) => {
     return () => unsubscribe();
   };
 
+  const handleDelete = async (isbn: string) => {
+    if (!user) return;
+
+    const userEmail = user.email!;
+    const userRef = doc(db, "users", userEmail);
+
+    try {
+      await updateDoc(userRef, {
+        read_later: readBooks
+          .filter((book) => book.id !== isbn)
+          .map((book) => book.id),
+      });
+      setReadBooks((prevBooks) => prevBooks.filter((book) => book.id !== isbn));
+    } catch (error) {
+      console.error("Error deleting book:", error);
+    }
+  };
+
   const fetchBookDetailsFromGoogle = async (isbnList: string[]) => {
     const booksDetails = [];
     for (const isbn of isbnList) {
@@ -124,27 +142,35 @@ const ShortListedBooksPage = (props: Props) => {
                 <div className="flex flex-wrap gap-4 mt-4">
                   {readBooks.length > 0 ? (
                     readBooks.map((book) => (
-                      <Link href={`/book/${book.id}`} key={book.id}>
-                        <div className="w-48 h-80 bg-[#343434] hover:bg-[#1e1e1e] transition-all cursor-pointer hover:scale-105 shadow-md rounded-md flex flex-col items-start p-4">
-                          <img
-                            src={book.coverImage}
-                            alt={book.name}
-                            className="w-full h-48 object-cover rounded-md mb-4"
-                          />
-                          <h5
-                            className="text-lg font-medium text-white text-start"
-                            style={{ fontFamily: "Poppins, sans-serif" }}
-                          >
-                            {book.name}
-                          </h5>
-                          <p
-                            className="text-sm text-gray-200 text-center"
-                            style={{ fontFamily: "Poppins, sans-serif" }}
-                          >
-                            {book.author}
-                          </p>
-                        </div>
-                      </Link>
+                      <div key={book.id} className="relative">
+                        <Link href={`/book/${book.id}`}>
+                          <div className="w-48 h-80 bg-[#343434] hover:bg-[#1e1e1e] transition-all cursor-pointer hover:scale-105 shadow-md rounded-md flex flex-col items-start p-4">
+                            <img
+                              src={book.coverImage}
+                              alt={book.name}
+                              className="w-full h-48 object-cover rounded-md mb-4"
+                            />
+                            <h5
+                              className="text-lg font-medium text-white text-start"
+                              style={{ fontFamily: "Poppins, sans-serif" }}
+                            >
+                              {book.name}
+                            </h5>
+                            <p
+                              className="text-sm text-gray-200 text-center"
+                              style={{ fontFamily: "Poppins, sans-serif" }}
+                            >
+                              {book.author}
+                            </p>
+                          </div>
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(book.id)}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-700 transition"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ))
                   ) : (
                     <div className="text-xl text-gray-700">No books found</div>

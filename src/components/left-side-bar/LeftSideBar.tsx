@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 type Props = {};
@@ -14,24 +15,30 @@ const LeftSideBar = (props: Props) => {
         </div>
         <div className="leftSideBarContent w-full mt-4">
           <ul className="p-2 w-full space-y-2">
-            <li
-              className="p-2 text-gray-200 bg-transparent rounded-md cursor-pointer transition-all hover:bg-[#4a4a4a] w-full text-sm sm:text-base md:text-lg"
-              style={{ fontFamily: "Poppins" }}
-            >
-              Your Profile
-            </li>
-            <li
-              className="p-2 text-gray-200 bg-transparent rounded-md cursor-pointer transition-all hover:bg-[#4a4a4a] w-full text-sm sm:text-base md:text-lg"
-              style={{ fontFamily: "Poppins" }}
-            >
-              Read books
-            </li>
-            <li
-              className="p-2 text-gray-200 bg-transparent rounded-md cursor-pointer transition-all hover:bg-[#4a4a4a] w-full text-sm sm:text-base md:text-lg"
-              style={{ fontFamily: "Poppins" }}
-            >
-              Shortlisted books
-            </li>
+            <Link href="/dashboard">
+              <li
+                className="p-2 text-gray-200 bg-transparent rounded-md cursor-pointer transition-all hover:bg-[#4a4a4a] w-full text-sm sm:text-base md:text-lg"
+                style={{ fontFamily: "Poppins" }}
+              >
+                Your Profile
+              </li>
+            </Link>
+            <Link href="/read-books">
+              <li
+                className="p-2 text-gray-200 bg-transparent rounded-md cursor-pointer transition-all hover:bg-[#4a4a4a] w-full text-sm sm:text-base md:text-lg"
+                style={{ fontFamily: "Poppins" }}
+              >
+                Read books
+              </li>
+            </Link>
+            <Link href="/shortlisted-books">
+              <li
+                className="p-2 text-gray-200 bg-transparent rounded-md cursor-pointer transition-all hover:bg-[#4a4a4a] w-full text-sm sm:text-base md:text-lg"
+                style={{ fontFamily: "Poppins" }}
+              >
+                Shortlisted books
+              </li>
+            </Link>
           </ul>
         </div>
       </div>

@@ -3,84 +3,119 @@ import React, { useEffect, useState } from "react";
 import Footer from "@/components/footer/Footer";
 import Navbar from "@/components/navbar/Navbar";
 import LeftSideBar from "@/components/left-side-bar/LeftSideBar";
-import { db, auth } from "@/firebase/firebaseConfig"; // Assuming you're using Firebase
-import { doc, onSnapshot } from "firebase/firestore"; // Firebase Firestore methods
+import { db, auth } from "@/firebase/firebaseConfig"; // Ensure you've imported Firebase config
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY; // Add your Google Books API Key
+import Link from "next/link";
 
 type Props = {};
 
-const ReadBooks = (props: Props) => {
-  const [readBooks, setReadBooks] = useState<any[]>([]); // State for books
-  const [loading, setLoading] = useState<boolean>(true); // Loading state
-  const [user, setUser] = useState<any>(null); // Authenticated user
+const ReadBooksPage = (props: Props) => {
+  const [readBooks, setReadBooks] = useState<any[]>([]); // State to hold the books
+  const [loading, setLoading] = useState<boolean>(true);
+  const [message, setMessage] = useState<string>("");
+  const [user, setUser] = useState<any>(null); // State to hold the authenticated user
 
-  // Function to fetch book data from Google Books API based on ISBN
-  const fetchBookData = async (isbn: string) => {
-    try {
-      const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`
-      );
-      const data = await response.json();
-      return data.items ? data.items[0].volumeInfo : null;
-    } catch (error) {
-      console.error("Error fetching book data from Google Books API:", error);
-      return null;
-    }
-  };
+  const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 
-  // Fetch the read_books data from Firebase
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
-        console.log("User authenticated:", currentUser); // Log the authenticated user
+        setUser(currentUser); // Set user state if user is logged in
+        console.log(currentUser);
       } else {
-        setUser(null);
-        console.log("User not authenticated.");
+        setUser(null); // Clear user state if logged out
       }
     });
 
+    // Cleanup on unmount
     return () => unsubscribeAuth();
   }, []);
 
+  const handleDelete = async (isbn: string) => {
+    if (!user) return;
+
+    const userEmail = user.email!;
+    const userRef = doc(db, "users", userEmail);
+
+    try {
+      await updateDoc(userRef, {
+        read_books: readBooks
+          .filter((book) => book.id !== isbn)
+          .map((book) => book.id),
+      });
+      setReadBooks((prevBooks) => prevBooks.filter((book) => book.id !== isbn));
+    } catch (error) {
+      console.error("Error deleting book:", error);
+    }
+  };
+
+  const fetchUserBooks = async () => {
+    if (!user) {
+      setMessage("User not authenticated.");
+      setLoading(false);
+      return;
+    }
+
+    const userEmail = user.email!;
+    const userRef = doc(db, "users", userEmail);
+
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(
+      userRef,
+      async (userDoc) => {
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const readBooksArray = userData?.read_books || [];
+          const booksWithDetails = await fetchBookDetailsFromGoogle(
+            readBooksArray
+          );
+          setReadBooks(booksWithDetails);
+        } else {
+          setMessage("No user data found.");
+        }
+        setLoading(false); // Stop loading when data is fetched
+      },
+      (error) => {
+        console.error("Error fetching user data:", error);
+        setMessage("Failed to fetch user data.");
+        setLoading(false);
+      }
+    );
+
+    // Unsubscribe from Firestore when the component unmounts
+    return () => unsubscribe();
+  };
+
+  const fetchBookDetailsFromGoogle = async (isbnList: string[]) => {
+    const booksDetails = [];
+    for (const isbn of isbnList) {
+      try {
+        const response = await fetch(
+          `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`
+        );
+        const data = await response.json();
+        if (data.items && data.items.length > 0) {
+          const book = data.items[0].volumeInfo;
+          booksDetails.push({
+            id: isbn,
+            coverImage: book.imageLinks?.thumbnail || "fallback_image_url",
+            name: book.title || "Unknown Title",
+            author: book.authors?.join(", ") || "Unknown Author",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching book details from Google API:", error);
+      }
+    }
+    return booksDetails;
+  };
+
   useEffect(() => {
     if (user) {
-      const fetchReadBooks = async () => {
-        const userRef = doc(db, "users", user.email!);
-
-        const unsubscribe = onSnapshot(userRef, async (userDoc) => {
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            const readBooksArray = userData?.read_books || []; // Assuming `read_books` is an array in the Firestore document
-
-            // Fetch data for each book using Google Books API
-            const booksWithDetails = await Promise.all(
-              readBooksArray.map(async (book: any) => {
-                const bookData = await fetchBookData(book.isbn);
-                return {
-                  ...book,
-                  ...bookData, // Merge the data from Google Books API
-                };
-              })
-            );
-
-            console.log("Fetched books:", booksWithDetails); // Log the fetched books
-            setReadBooks(booksWithDetails); // Set the read_books data with Google Books details
-            setLoading(false); // Set loading to false once data is fetched
-          } else {
-            console.log("No user data found.");
-            setLoading(false);
-          }
-        });
-
-        return () => unsubscribe();
-      };
-
-      fetchReadBooks();
+      fetchUserBooks(); // Fetch books only when user is authenticated
     }
-  }, [user]);
+  }, [user]); // Re-fetch books when user changes
 
   if (loading) {
     return <div className="text-white text-xl">Loading your books...</div>;
@@ -92,11 +127,10 @@ const ReadBooks = (props: Props) => {
         <Navbar />
         <div className="flex-grow">
           <div className="flex flex-row justify-start items-start">
-            <div className="flex flex-col justify-start items-start">
+            <div className="flex flex-col justify-start items-start w-auto">
               <LeftSideBar />
             </div>
             <div className="flex rounded-tl-md rounded-bl-md h-[83vh] bg-[#ffe4c9] w-full flex-col justify-start items-start">
-              {/* Section for read books */}
               <div className="ml-4 mt-8">
                 <h4
                   className="text-2xl font-semibold text-gray-900"
@@ -104,34 +138,38 @@ const ReadBooks = (props: Props) => {
                 >
                   Books You've Read
                 </h4>
+                {message && <div className="text-red-500">{message}</div>}
                 <div className="flex flex-wrap gap-4 mt-4">
                   {readBooks.length > 0 ? (
-                    readBooks.map((book: any, index: number) => (
-                      <div
-                        key={book.id || index} // Use book.id if available, otherwise fallback to index
-                        className="w-48 h-72 bg-[#343434] hover:bg-[#1e1e1e] transition-all cursor-pointer hover:scale-105 shadow-md rounded-md flex flex-col items-start p-4"
-                      >
-                        <img
-                          src={
-                            book.imageLinks?.thumbnail || "default_image_url"
-                          } // Use Google Books cover image or fallback
-                          alt={book.title || "Unknown Title"} // Fallback title if missing
-                          className="w-full h-48 object-cover rounded-md mb-4"
-                        />
-                        <h5
-                          className="text-lg font-medium text-white text-center"
-                          style={{ fontFamily: "Poppins, sans-serif" }}
+                    readBooks.map((book) => (
+                      <div key={book.id} className="relative">
+                        <Link href={`/book/${book.id}`}>
+                          <div className="w-48 h-80 bg-[#343434] hover:bg-[#1e1e1e] transition-all cursor-pointer hover:scale-105 shadow-md rounded-md flex flex-col items-start p-4">
+                            <img
+                              src={book.coverImage}
+                              alt={book.name}
+                              className="w-full h-48 object-cover rounded-md mb-4"
+                            />
+                            <h5
+                              className="text-lg font-medium text-white text-start"
+                              style={{ fontFamily: "Poppins, sans-serif" }}
+                            >
+                              {book.name}
+                            </h5>
+                            <p
+                              className="text-sm text-gray-200 text-center"
+                              style={{ fontFamily: "Poppins, sans-serif" }}
+                            >
+                              {book.author}
+                            </p>
+                          </div>
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(book.id)}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-700 transition"
                         >
-                          {book.title || "Unknown Title"}{" "}
-                          {/* Fallback to a default text if title is missing */}
-                        </h5>
-                        <p
-                          className="text-sm text-gray-200 text-center"
-                          style={{ fontFamily: "Poppins, sans-serif" }}
-                        >
-                          {book.authors?.join(", ") || "Unknown Author"}{" "}
-                          {/* Fallback to default authors if missing */}
-                        </p>
+                          ✕
+                        </button>
                       </div>
                     ))
                   ) : (
@@ -149,4 +187,4 @@ const ReadBooks = (props: Props) => {
   );
 };
 
-export default ReadBooks;
+export default ReadBooksPage;
