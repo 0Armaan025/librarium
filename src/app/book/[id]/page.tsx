@@ -8,6 +8,7 @@ import { db, auth } from "@/firebase/firebaseConfig";
 import "firebase/firestore";
 import "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid"; // Import the 'uuid' package
 
 const BookInfoPage = () => {
   const [bookDetails, setBookDetails] = useState<any>(null);
@@ -173,6 +174,8 @@ const BookInfoPage = () => {
         setCookie("file_extension", data.file_extension, { maxAge: 60 * 60 });
         setModalVisible(false);
         setMessage("Book details saved!");
+        const random_id = uuidv4();
+        window.location.href = `/read/${random_id}`;
       } else {
         setMessage("Failed to retrieve download information.");
       }
@@ -206,7 +209,7 @@ const BookInfoPage = () => {
       )}
       <div className="flex-grow px-4 py-8 sm:px-16">
         {loadingGoogleBook ? (
-          <div className="text-center text-gray-500">
+          <div className="text-center text-gray-200">
             Loading book details...
           </div>
         ) : bookDetails ? (

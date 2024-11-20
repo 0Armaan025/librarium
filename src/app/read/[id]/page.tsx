@@ -1,46 +1,102 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getCookie } from "cookies-next"; // Import cookies-next to manage cookies
 import FlipBook from "./fbook";
 import Footer from "@/components/footer/Footer";
 import Navbar from "@/components/navbar/Navbar";
 
 const FlipbookPage: React.FC = () => {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false); // Loading state
+  const [pdfFile, setPdfFile] = useState<File | null>(null); // Store the PDF file
 
-  // Handle PDF upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPdfFile(file);
+  useEffect(() => {
+    const fetchFileFromCookie = async () => {
+      const fileExtension = getCookie("file_extension")?.toString(); // Get the file extension from cookie
+      const encodedDownloadUrl = getCookie("download_url")?.toString(); // Get the download URL from cookie
 
-      const formData = new FormData();
-      formData.append("file", file);
+      // Decode the URL
+      const downloadUrl = encodedDownloadUrl
+        ? decodeURIComponent(encodedDownloadUrl)
+        : "";
 
-      setLoading(true); // Show loader when upload starts
+      if (fileExtension && downloadUrl) {
+        setLoading(true); // Show loader
 
-      try {
-        const response = await fetch("http://127.0.0.1:5000/convert_pdf/", {
-          method: "POST",
-          body: formData,
-        });
+        try {
+          if (fileExtension === ".pdf") {
+            // If the file is a PDF, directly fetch it
+            const response = await fetch(downloadUrl);
+            const blob = await response.blob();
+            const file = new File([blob], "file.pdf", {
+              type: "application/pdf",
+            });
+            setPdfFile(file);
+            processFile(file);
+          } else if (fileExtension === ".epub") {
+            // If the file is an EPUB, download it, convert it, and then process
+            const response = await fetch(downloadUrl);
+            const epubBlob = await response.blob();
+            // Assuming you have a server endpoint to convert the EPUB to PDF
+            const formData = new FormData();
+            formData.append("file", epubBlob);
 
-        if (response.ok) {
-          const data = await response.json();
-          // Prepend the server URL to each image path
-          const fullImageUrls = data.images.map(
-            (img: string) => `http://127.0.0.1:5000${img}`
-          );
-          setImageUrls(fullImageUrls); // Update image URLs
-        } else {
-          console.error("Failed to convert PDF");
+            // Send the EPUB to be converted to PDF
+            const convertResponse = await fetch(
+              "http://127.0.0.1:5000/convert_epub/",
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+            if (convertResponse.ok) {
+              const data = await convertResponse.json();
+              const fullImageUrls = data.images.map(
+                (img: string) => `http://127.0.0.1:5000${img}`
+              );
+              setImageUrls(fullImageUrls); // Update image URLs for the flipbook
+            } else {
+              console.error("Failed to convert EPUB to PDF.");
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching or processing file:", error);
+        } finally {
+          setLoading(false); // Hide loader after processing is complete
         }
-      } catch (error) {
-        console.error("Error uploading the PDF:", error);
-      } finally {
-        setLoading(false); // Hide loader when upload is complete
       }
+    };
+
+    fetchFileFromCookie(); // Call the function when component mounts
+  }, []);
+
+  // Function to process the PDF file and convert it into images
+  const processFile = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setLoading(true); // Show loader when upload starts
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/convert_pdf/", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const fullImageUrls = data.images.map(
+          (img: string) => `http://127.0.0.1:5000${img}`
+        );
+        setImageUrls(fullImageUrls); // Update image URLs for the flipbook
+      } else {
+        console.error("Failed to convert PDF");
+      }
+    } catch (error) {
+      console.error("Error uploading the PDF:", error);
+    } finally {
+      setLoading(false); // Hide loader when upload is complete
     }
   };
 
@@ -50,16 +106,6 @@ const FlipbookPage: React.FC = () => {
         <Navbar />
         <div className="flipbook-page-container flex-grow">
           <h1>Custom FlipBook</h1>
-
-          {/* File upload input */}
-          <div className="upload-section">
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={handleFileUpload}
-              className="upload-input"
-            />
-          </div>
 
           {/* Loader Modal */}
           {loading && (
@@ -77,7 +123,7 @@ const FlipbookPage: React.FC = () => {
           {imageUrls.length > 0 ? (
             <FlipBook pages={imageUrls} />
           ) : (
-            <p>Upload a PDF to convert it to a flipbook.</p>
+            <p>Loading flipbook...</p>
           )}
         </div>
         <Footer />
