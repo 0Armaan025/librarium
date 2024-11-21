@@ -68,9 +68,7 @@ const BookInfoPage = () => {
     toggleGlobalLoading(true);
     try {
       const response = await fetch(
-        `https://python-pdf-to-image.vercel.app/search?book_name=${encodeURIComponent(
-          bookName
-        )}`
+        `http://127.0.0.1:8080/search?book_name=${encodeURIComponent(bookName)}`
       );
       const data = await response.json();
 
@@ -162,16 +160,13 @@ const BookInfoPage = () => {
     toggleGlobalLoading(true);
 
     try {
-      const response = await fetch(
-        "https://python-pdf-to-image.vercel.app/download",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ mirror_url: mirror_links[0] }),
-        }
-      );
+      const response = await fetch("http://127.0.0.1:8080/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mirror_url: mirror_links[0] }),
+      });
 
       const data = await response.json();
       console.log(data);
