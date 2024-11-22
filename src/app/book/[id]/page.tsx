@@ -68,7 +68,7 @@ const BookInfoPage = () => {
     toggleGlobalLoading(true);
     try {
       const response = await fetch(
-        `https://python-pdf-to-image.vercel.app/search?book_name=${encodeURIComponent(
+        `https://5000-0armaan025-pythonpdftoi-vv9l3p2bxaa.ws-us116.gitpod.io/search?book_name=${encodeURIComponent(
           bookName
         )}`
       );
@@ -163,7 +163,7 @@ const BookInfoPage = () => {
 
     try {
       const response = await fetch(
-        "https://python-pdf-to-image.vercel.app/download",
+        "https://5000-0armaan025-pythonpdftoi-vv9l3p2bxaa.ws-us116.gitpod.io/download",
         {
           method: "POST",
           headers: {

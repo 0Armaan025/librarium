@@ -4,15 +4,10 @@ import { getCookie } from "cookies-next";
 import Footer from "@/components/footer/Footer";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
+import ePub, { Rendition } from "epubjs";
 import Navbar from "@/components/navbar/Navbar";
+import { fsync } from "fs";
 import { Document, Page, pdfjs } from "react-pdf";
-import {
-  ReactReader,
-  ReactReaderStyle,
-  type IReactReaderStyle,
-} from "react-reader";
-import type { NavItem } from "epubjs";
-import type { Rendition } from "epubjs";
 
 const FlipbookPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -21,31 +16,18 @@ const FlipbookPage: React.FC = () => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [numPages, setNumPages] = useState<number>(0);
-  const [location, setLocation] = useState<string | number>(0);
-  const rendition = useRef<Rendition | undefined>(undefined);
-  const toc = useRef<NavItem[]>([]);
+  const [location, setLocation] = useState<string>(""); // For EPUB location
+  const [toc, setToc] = useState<any[]>([]); // Table of Contents
+
+  const renditionRef = useRef<Rendition | null>(null);
+  const viewerRef = useRef<HTMLDivElement | null>(null);
+
   const [page, setPage] = useState("");
 
   const workerSrc =
     "https://unpkg.com/pdfjs-dist@4.4.168/legacy/build/pdf.worker.min.mjs";
 
   pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
-
-  const updateTheme = (rendition: Rendition, theme: "light" | "dark") => {
-    const themes = rendition.themes;
-    switch (theme) {
-      case "dark": {
-        themes.override("color", "#fff");
-        themes.override("background", "#000");
-        break;
-      }
-      case "light": {
-        themes.override("color", "#000");
-        themes.override("background", "#fff");
-        break;
-      }
-    }
-  };
 
   useEffect(() => {
     const fetchFileFromCookie = async () => {
@@ -78,6 +60,53 @@ const FlipbookPage: React.FC = () => {
     fetchFileFromCookie();
   }, []);
 
+  useEffect(() => {
+    if (epubUrl && viewerRef.current) {
+      const book = ePub(epubUrl);
+      const rendition = book.renderTo(viewerRef.current, {
+        width: "100%",
+        height: "100%",
+      });
+
+      renditionRef.current = rendition;
+
+      // Load initial location or first chapter
+      rendition.display(location || undefined);
+
+      // Fetch and store the Table of Contents (TOC)
+      book.loaded.navigation.then((nav) => setToc(nav.toc));
+
+      // Handle location changes
+      rendition.on("relocated", (location: any) => {
+        setLocation(location.start.cfi);
+      });
+    }
+
+    return () => {
+      // Cleanup on unmount
+      if (renditionRef.current) {
+        renditionRef.current.destroy();
+      }
+    };
+  }, [epubUrl]);
+
+  const goToNextPage = () => {
+    renditionRef.current?.next();
+  };
+
+  const goToPrevPage = () => {
+    renditionRef.current?.prev();
+  };
+
+  const jumpToChapter = (href: string) => {
+    renditionRef.current?.display(href);
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setPageNumber(1);
+  };
+
   function onLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
   }
@@ -102,36 +131,44 @@ const FlipbookPage: React.FC = () => {
         )}
 
         {epubUrl ? (
-          <div className="relative w-full h-full max-w-screen-lg mx-auto">
-            <ReactReader
-              url={epubUrl}
-              readerStyles={
-                theme === "dark" ? darkReaderTheme : lightReaderTheme
-              }
-              getRendition={(_rendition: Rendition) => {
-                rendition.current = _rendition;
-                updateTheme(rendition.current, theme);
-              }}
-              location={location}
-              tocChanged={(_toc) => (toc.current = _toc)}
-              locationChanged={(loc: string) => {
-                setLocation(loc);
-                if (rendition.current && toc.current) {
-                  const { displayed, href } = rendition.current.location.start;
-                  const chapter = toc.current.find(
-                    (item) => item.href === href
-                  );
-                  setPage(
-                    `Page ${displayed.page} of ${displayed.total} in chapter ${
-                      chapter ? chapter.label : "n/a"
-                    }`
-                  );
-                }
-              }}
-            />
-            <center>
-              <h3 className="text-white text-lg mt-4 mb-8">{page}</h3>
-            </center>
+          <div className="relative w-full max-w-4xl mx-auto flex flex-col">
+            <div
+              ref={viewerRef}
+              className="border rounded-lg overflow-hidden shadow-md bg-gray-50 h-[70vh] mb-6"
+            ></div>
+            <div className="flex justify-between mb-6">
+              <button
+                onClick={goToPrevPage}
+                className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+              >
+                Previous
+              </button>
+              <button
+                onClick={goToNextPage}
+                className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+              >
+                Next
+              </button>
+            </div>
+            {toc.length > 0 && (
+              <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">
+                  Table of Contents
+                </h3>
+                <ul className="space-y-2">
+                  {toc.map((chapter, index) => (
+                    <li key={index}>
+                      <button
+                        onClick={() => jumpToChapter(chapter.href)}
+                        className="text-blue-600 hover:text-blue-800 underline text-sm"
+                      >
+                        {chapter.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         ) : pdfUrl ? (
           <div className="relative w-full h-full overflow-hidden max-w-screen-lg mx-auto flex flex-col justify-center items-center">
@@ -177,67 +214,3 @@ const FlipbookPage: React.FC = () => {
 };
 
 export default FlipbookPage;
-
-const lightReaderTheme: IReactReaderStyle = {
-  ...ReactReaderStyle,
-  readerArea: {
-    ...ReactReaderStyle.readerArea,
-    transition: undefined,
-  },
-  tocArea: {
-    ...ReactReaderStyle.tocArea,
-    background: "black",
-  },
-  tocButtonExpanded: {
-    ...ReactReaderStyle.tocButtonExpanded,
-  },
-  tocButtonBar: {
-    ...ReactReaderStyle.tocButtonBar,
-    background: "black",
-  },
-  tocButton: {
-    ...ReactReaderStyle.tocButton,
-    color: "black",
-  },
-  arrow: {
-    ...ReactReaderStyle.arrow,
-    color: "black",
-  },
-};
-
-const darkReaderTheme: IReactReaderStyle = {
-  ...ReactReaderStyle,
-  arrow: {
-    ...ReactReaderStyle.arrow,
-    color: "white",
-  },
-  arrowHover: {
-    ...ReactReaderStyle.arrowHover,
-    color: "#ccc",
-  },
-  readerArea: {
-    ...ReactReaderStyle.readerArea,
-    backgroundColor: "#000",
-    transition: undefined,
-  },
-  titleArea: {
-    ...ReactReaderStyle.titleArea,
-    color: "#ccc",
-  },
-  tocArea: {
-    ...ReactReaderStyle.tocArea,
-    background: "#111",
-  },
-  tocButtonExpanded: {
-    ...ReactReaderStyle.tocButtonExpanded,
-    background: "#222",
-  },
-  tocButtonBar: {
-    ...ReactReaderStyle.tocButtonBar,
-    background: "#fff",
-  },
-  tocButton: {
-    ...ReactReaderStyle.tocButton,
-    color: "white",
-  },
-};
