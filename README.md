@@ -25,17 +25,8 @@
 <br/>
 
 ### 1.) write the following in the command prompt/terminal/powershell.
-
-<br/>
-
 ### 2.) ``git clone https://github.com/0Armaan025/librarium``
-
-<br/>
-
 ### 3.) ``cd librarium``
-
-<br/>
-
 ### 4.) create a file called .env.local and get your own keys/tokens and fill the following: 
 ```
 NEXT_PUBLIC_GOOGLE_API_KEY=
@@ -47,24 +38,13 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
 ```
-
-<br/>
-
 ### 5.) ``npm install`` in your terminal.
-
-<br/>
-
 ### 6.) ``npm run dev`` and there you go! 🔥
-
-<br/>
 
 ## This is just a wrapper for libgen.is 🥹⭐
 
-<br/>
-
 ![how stuff works ig](https://github.com/user-attachments/assets/96492e11-831c-4148-aade-934768ab6a2b)
 
-<br/>
 
 ### Thanks if you are here, also make sure to leave a ⭐, thanks
 - Armaan
