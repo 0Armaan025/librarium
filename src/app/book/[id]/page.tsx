@@ -220,15 +220,15 @@ const BookInfoPage = () => {
             Loading book details...
           </div>
         ) : bookDetails ? (
-          <div className="flex flex-col sm:flex-row justify-center items-center sm:justify-between gap-8">
-            <div className="w-full sm:w-1/3 flex justify-center">
+          <div className="flex flex-col sm:flex-row justify-center items-start sm:items-center sm:justify-between gap-4">
+            <div className="w-full sm:w-1/2 flex justify-center">
               <img
                 src={bookDetails.imageUrl}
                 alt="Book Cover"
-                className="w-full h-[36rem] rounded-lg shadow-lg"
+                className="w-full h-[36rem] sm:h-[30rem] rounded-lg shadow-lg object-cover"
               />
             </div>
-            <div className="w-full sm:w-2/3 h-[36rem] bg-[#ffe4c9] p-6 rounded-lg shadow-lg border border-gray-200 space-y-4">
+            <div className="w-full sm:w-1/2 h-[36rem] sm:h-[30rem] bg-[#ffe4c9] p-6 rounded-lg shadow-lg border border-gray-200 space-y-4 flex flex-col">
               <h2 className="text-4xl font-semibold text-gray-900">
                 {bookDetails.title}
               </h2>
@@ -238,7 +238,6 @@ const BookInfoPage = () => {
                   <span className="font-semibold">{bookDetails.isbn}</span>
                 </h4>
               </div>
-
               <div className="flex flex-col sm:flex-row gap-2 text-gray-600">
                 <h5 className="text-lg">
                   Genre:{" "}
@@ -265,12 +264,12 @@ const BookInfoPage = () => {
                 className="text-md text-md text-gray-800 mt-4"
                 style={{ fontFamily: "Poppins, sans-serif" }}
               >
-                {bookDetails.description.split(" ").slice(0, 50).join(" ")}
-                {bookDetails.description.split(" ").length > 50 && "..."}
+                {bookDetails.description.split(" ").slice(0, 40).join(" ")}
+                {bookDetails.description.split(" ").length > 40 && "..."}
               </p>
-              <div className="flex gap-4 mt-8">
+              <div className="flex gap-4 mt-4">
                 <button
-                  className="bg-orange-400 text-white px-8 py-3 rounded-xl font-semibold hover:bg-orange-500"
+                  className="bg-orange-400 text-white px-8 py-1 rounded-xl font-semibold hover:bg-orange-500"
                   onClick={handleReadBookClick}
                 >
                   Read Book

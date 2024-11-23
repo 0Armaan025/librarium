@@ -79,6 +79,7 @@ const FlipbookPage: React.FC = () => {
       // Handle location changes
       rendition.on("relocated", (location: any) => {
         setLocation(location.start.cfi);
+        window.location.reload();
       });
     }
 
