@@ -3,12 +3,11 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   browserLocalPersistence,
-  getAuth,
   onAuthStateChanged,
   setPersistence,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { app, db, auth } from "../../firebase/firebaseConfig";
+import { auth } from "../../firebase/firebaseConfig";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import PasswordInput from "@/components/password-input/PasswordInput";
@@ -18,8 +17,8 @@ type Props = {};
 const LoginPage = (props: Props) => {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
-  const [user, setUser] = useState(null); // State to hold the logged-in user
-  const [error, setError] = useState(""); // State for handling errors
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,9 +36,7 @@ const LoginPage = (props: Props) => {
     }
 
     try {
-      // Sign in the user with email and password
       await signInWithEmailAndPassword(auth, email, password);
-      // Redirect to dashboard after successful login
       router.push("/dashboard");
     } catch (err: any) {
       setError("Invalid credentials, please try again.");
@@ -51,15 +48,12 @@ const LoginPage = (props: Props) => {
       console.error("Error setting persistence", err);
     });
 
-    // Listen for authentication state changes
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser as any);
-
-        console.log(currentUser);
         window.location.href = "/dashboard";
       } else {
-        setUser(null); // Clear user state if logged out
+        setUser(null);
       }
     });
 
@@ -67,7 +61,6 @@ const LoginPage = (props: Props) => {
   }, [auth]);
 
   const handleGuestLogin = () => {
-    // Redirect to books page for guest login
     router.push("/books");
   };
 
@@ -75,10 +68,11 @@ const LoginPage = (props: Props) => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <div className="flex-grow">
-        <div className="flex flex-row justify-start items-start mt-12">
-          <div className="flex p-4 bg-[#ffe4c9] h-[70vh] w-[50%] ml-[1rem] rounded-[1rem] flex-col justify-start items-start">
+        <div className="flex flex-col md:flex-row justify-center items-start mt-8 gap-4">
+          {/* Left Section */}
+          <div className="flex p-4 bg-[#ffe4c9] h-auto md:h-[70vh] w-[90%] md:w-[50%] mx-auto md:ml-[1rem] rounded-[1rem] flex-col justify-start items-start">
             <h4
-              className="text-3xl text-black mt-4 font-semibold ml-4"
+              className="text-2xl md:text-3xl text-black mt-4 font-semibold ml-4"
               style={{ fontFamily: "Poppins, sans-serif" }}
             >
               Log in to your account
@@ -96,10 +90,7 @@ const LoginPage = (props: Props) => {
               style={{ fontFamily: "Poppins, sans-serif" }}
             />
             <PasswordInput value={password} onChange={handlePasswordChange} />
-            {error && (
-              <p className="text-red-500 text-sm ml-4 mt-2">{error}</p>
-            )}{" "}
-            {/* Display error if any */}
+            {error && <p className="text-red-500 text-sm ml-4 mt-2">{error}</p>}
             <button
               onClick={handleLogin}
               style={{ fontFamily: "Poppins, sans-serif" }}
@@ -108,7 +99,10 @@ const LoginPage = (props: Props) => {
               Log in
             </button>
             <center>
-              <h4 className="ml-[11rem] mt-2" style={{ fontFamily: "Poppins" }}>
+              <h4
+                className="text-center mt-2"
+                style={{ fontFamily: "Poppins" }}
+              >
                 or continue with:
               </h4>
             </center>
@@ -120,16 +114,18 @@ const LoginPage = (props: Props) => {
               Continue as a guest
             </button>
           </div>
-          <div className="flex p-4 bg-[#242424] w-[60%] h-[70vh] ml-[2rem] rounded-[1rem] flex-col justify-start items-start">
+
+          {/* Right Section */}
+          <div className="hidden md:flex p-4 bg-[#242424] w-full md:w-[60%] h-[70vh] md:ml-[2rem] rounded-[1rem] flex-col justify-start items-start relative">
             <button
               style={{ fontFamily: "poppins, sans-serif" }}
-              className="absolute top-[8rem] right-[2.5rem] bg-white bg-opacity-25 hover:bg-opacity-40 transition-all text-[0.6rem] px-4 border-[1.5px] border-black py-2 rounded-3xl text-white"
+              className="absolute top-4 right-4 md:top-[8rem] md:right-[2.5rem] bg-white bg-opacity-25 hover:bg-opacity-40 transition-all text-[0.6rem] px-4 border-[1.5px] border-black py-2 rounded-3xl text-white"
             >
               &lt;- Go back
             </button>
             <img
               src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8bGlicmFyeXxlbnwwfHwwfHx8MA%3D%3D"
-              className="w-full h-full rounded-md"
+              className="w-full h-full rounded-md object-cover"
             />
           </div>
         </div>
