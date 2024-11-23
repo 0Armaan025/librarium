@@ -128,7 +128,7 @@ const ForumPage = () => {
             </h2>
             <input
               type="text"
-              className="w-full mb-4 px-4 py-2 bg-gray-100 border border-gray-300 rounded-md"
+              className="w-full mb-4 text-black px-4 py-2 bg-gray-100 border border-gray-300 rounded-md"
               placeholder="Title"
               value={newThread.title}
               onChange={(e) =>
@@ -137,7 +137,7 @@ const ForumPage = () => {
             />
             <input
               type="text"
-              className="w-full mb-4 px-4 py-2 bg-gray-100 border border-gray-300 rounded-md"
+              className="w-full mb-4 px-4 py-2 text-black bg-gray-100 border border-gray-300 rounded-md"
               placeholder="Your Name"
               value={newThread.author}
               onChange={(e) =>

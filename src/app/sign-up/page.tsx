@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
-  getAuth,
   setPersistence,
   browserLocalPersistence,
   onAuthStateChanged,
@@ -57,30 +56,40 @@ const SignUpPage = () => {
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
-        setError("User already exists. Redirecting to dashboard...");
-        router.push("/dashboard");
+        setError("User already exists. Redirecting to login...");
+        router.push("/login");
         return;
       }
 
+      // Save user data in Firestore first
+      await setDoc(userDocRef, {
+        firstName,
+        armaanCounter,
+        lastName,
+        email,
+        createdAt: new Date().toISOString(),
+      });
+
+      // Create a new user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      await setDoc(userDocRef, {
-        firstName,
-        armaanCounter,
-        lastName,
-        password,
-        email,
-        createdAt: new Date().toISOString(),
-        uid: userCredential.user.uid,
-      });
+      // Add the UID to the Firestore document after user creation
+      await setDoc(
+        userDocRef,
+        {
+          uid: userCredential.user.uid,
+        },
+        { merge: true }
+      );
 
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message);
+      console.error("Error during sign-up:", err);
+      setError(err.message || "Something went wrong!");
     }
   };
 
