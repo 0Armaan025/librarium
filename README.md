@@ -27,7 +27,7 @@
 ### 1.) write the following in the command prompt/terminal/powershell.
 ### 2.) ``git clone https://github.com/0Armaan025/librarium``
 ### 3.) ``cd librarium``
-### 4.) create a file called .env.local and get your own keys/tokens and fill the following: 
+### 4.) create a file called ``.env.local`` and get your own keys/tokens and fill the following: 
 ```
 NEXT_PUBLIC_GOOGLE_API_KEY=
 NEXT_PUBLIC_FIREBASE_API_KEY=
