@@ -135,6 +135,9 @@ const BookInfoPage = () => {
   };
 
   const handleReadBookClick = async () => {
+    alert(
+      "hey there! please wait for at least 5 mins, it takes min. of 5 mins to load."
+    );
     try {
       if (!bookDetails?.title) return;
 
@@ -265,8 +268,8 @@ const BookInfoPage = () => {
                 className="text-md text-md text-gray-800 mt-4"
                 style={{ fontFamily: "Poppins, sans-serif" }}
               >
-                {bookDetails.description.split(" ").slice(0, 50).join(" ")}
-                {bookDetails.description.split(" ").length > 50 && "..."}
+                {bookDetails.description.split(" ").slice(0, 40).join(" ")}
+                {bookDetails.description.split(" ").length > 40 && "..."}
               </p>
               <div className="flex gap-4 mt-8">
                 <button
